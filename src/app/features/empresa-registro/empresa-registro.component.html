@@ -1,0 +1,324 @@
+<!-- ============================================================
+     Registro de Empresa Aliada · OATI Beneficios UD
+     RF-004
+     ============================================================ -->
+<div class="app">
+
+  <!-- ── Header pre-auth ────────────────────────────────────── -->
+  <header class="header">
+    <div class="header__brand">
+      <img src="assets/images/logo-ud.png" alt="Universidad Distrital Francisco José de Caldas" />
+      <div class="header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Empresas Aliadas · OATI</span>
+      </div>
+    </div>
+    <div class="header__actions">
+      <a class="icon-btn" href="#soporte" aria-label="Soporte y ayuda">
+        <mat-icon>help_outline</mat-icon>
+      </a>
+    </div>
+  </header>
+
+  <!-- ── Contenido ─────────────────────────────────────────── -->
+  <main class="empresa-registro-main">
+
+    <!-- ── Estado: formulario ─────────────────────────────── -->
+    <ng-container *ngIf="pantalla === 'form'">
+
+      <div class="ereg-layout">
+
+        <!-- Panel informativo (lateral izquierdo) -->
+        <aside class="ereg-info">
+          <div class="ereg-info__icon" aria-hidden="true">
+            <mat-icon>business</mat-icon>
+          </div>
+          <h2 class="ereg-info__title">Conviértete en empresa aliada UD</h2>
+          <p class="ereg-info__body">
+            Publica beneficios para los más de <strong>60 000 egresados</strong> de la
+            Universidad Distrital Francisco José de Caldas.
+          </p>
+          <ul class="ereg-info__list">
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Tu registro es revisado por el equipo OATI.</span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Una vez aprobado, puedes publicar beneficios de inmediato.</span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>Gestiona solicitudes desde tu panel de empresa.</span>
+            </li>
+            <li>
+              <mat-icon>check_circle</mat-icon>
+              <span>El proceso de revisión toma hasta 3 días hábiles.</span>
+            </li>
+          </ul>
+
+          <div class="ereg-info__legal">
+            <mat-icon>info</mat-icon>
+            <p>
+              Los datos proporcionados se tratan conforme a la
+              <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a> y la
+              política de privacidad de la UD.
+            </p>
+          </div>
+        </aside>
+
+        <!-- Formulario (panel derecho) -->
+        <section class="ereg-form-panel">
+          <header class="ereg-form-panel__head">
+            <h1 class="ereg-form-panel__title">Registro de empresa</h1>
+            <p class="ereg-form-panel__sub">
+              Todos los campos marcados con <span class="required-mark">*</span> son obligatorios.
+            </p>
+          </header>
+
+          <form class="ereg-form" (ngSubmit)="enviar()" #f="ngForm" novalidate>
+
+            <!-- Sección: Datos de la empresa -->
+            <fieldset class="ereg-fieldset">
+              <legend class="ereg-fieldset__legend">Datos de la empresa</legend>
+
+              <div class="field-group">
+                <label class="field-label" for="nombre">
+                  Razón social <span class="required-mark">*</span>
+                </label>
+                <input
+                  id="nombre"
+                  type="text"
+                  class="field-input"
+                  placeholder="Ej. Globant Colombia S.A.S."
+                  [(ngModel)]="form.nombre"
+                  name="nombre"
+                  required
+                  autocomplete="organization"
+                />
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label class="field-label" for="nit">
+                    NIT <span class="required-mark">*</span>
+                  </label>
+                  <input
+                    id="nit"
+                    type="text"
+                    class="field-input"
+                    placeholder="900.123.456-7"
+                    [(ngModel)]="form.nit"
+                    name="nit"
+                    required
+                  />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="sector">
+                    Sector <span class="required-mark">*</span>
+                  </label>
+                  <select
+                    id="sector"
+                    class="field-input"
+                    [(ngModel)]="form.sector"
+                    name="sector"
+                    required
+                  >
+                    <option value="" disabled>Seleccionar…</option>
+                    <option *ngFor="let s of SECTORES" [value]="s">{{ s }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="sitioWeb">Sitio web</label>
+                <input
+                  id="sitioWeb"
+                  type="url"
+                  class="field-input"
+                  placeholder="https://www.ejemplo.com"
+                  [(ngModel)]="form.sitioWeb"
+                  name="sitioWeb"
+                  autocomplete="url"
+                />
+              </div>
+
+              <div class="field-group">
+                <label class="field-label" for="descripcion">
+                  Descripción de la empresa <span class="required-mark">*</span>
+                </label>
+                <textarea
+                  id="descripcion"
+                  class="field-input field-textarea"
+                  placeholder="Describe brevemente la actividad principal, trayectoria y por qué deseas ser empresa aliada UD…"
+                  [(ngModel)]="form.descripcion"
+                  name="descripcion"
+                  required
+                  rows="4"
+                ></textarea>
+              </div>
+            </fieldset>
+
+            <!-- Sección: Representante -->
+            <fieldset class="ereg-fieldset">
+              <legend class="ereg-fieldset__legend">Representante de contacto</legend>
+
+              <div class="field-group">
+                <label class="field-label" for="representante">
+                  Nombre completo <span class="required-mark">*</span>
+                </label>
+                <input
+                  id="representante"
+                  type="text"
+                  class="field-input"
+                  placeholder="Nombre y apellido del representante"
+                  [(ngModel)]="form.representante"
+                  name="representante"
+                  required
+                  autocomplete="name"
+                />
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label class="field-label" for="email">
+                    Correo corporativo <span class="required-mark">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    class="field-input"
+                    placeholder="nombre@empresa.com"
+                    [(ngModel)]="form.email"
+                    name="email"
+                    required
+                    autocomplete="email"
+                  />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="telefono">Teléfono</label>
+                  <input
+                    id="telefono"
+                    type="tel"
+                    class="field-input"
+                    placeholder="+57 1 234 5678"
+                    [(ngModel)]="form.telefono"
+                    name="telefono"
+                    autocomplete="tel"
+                  />
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Términos -->
+            <label class="ereg-check">
+              <input
+                type="checkbox"
+                [(ngModel)]="form.aceptaTerminos"
+                name="aceptaTerminos"
+              />
+              <span class="checkbox__box">
+                <mat-icon *ngIf="form.aceptaTerminos"
+                          style="font-size:12px;height:12px;width:12px;line-height:12px;color:#fff">check</mat-icon>
+              </span>
+              <span>
+                Acepto los
+                <a class="link" href="#terminos">términos y condiciones</a> del Portal de Empresas Aliadas UD
+                y el tratamiento de datos conforme a la
+                <a class="link" href="#habeas-data">Ley 1581/2012</a>.
+              </span>
+            </label>
+
+            <!-- Botones -->
+            <div class="ereg-form__footer">
+              <button
+                type="submit"
+                class="btn btn--primary"
+                style="width:auto;padding-left:28px;padding-right:28px"
+                [disabled]="!formValido"
+              >
+                Enviar registro
+                <mat-icon style="font-size:18px;height:18px;width:18px">arrow_forward</mat-icon>
+              </button>
+            </div>
+
+          </form>
+        </section>
+
+      </div><!-- /ereg-layout -->
+
+    </ng-container>
+
+    <!-- ── Estado: enviado (en revisión) ──────────────────── -->
+    <ng-container *ngIf="pantalla === 'enviado'">
+      <div class="ereg-success">
+        <div class="ereg-success__icon" aria-hidden="true">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <h1 class="ereg-success__title">Tu registro está en revisión</h1>
+        <p class="ereg-success__body">
+          Hemos recibido la solicitud de registro para <strong>{{ form.nombre }}</strong>.
+          El equipo OATI revisará los datos en los próximos <strong>3 días hábiles</strong>
+          y te notificará a <strong>{{ form.email }}</strong>.
+        </p>
+
+        <div class="ereg-success__steps">
+          <div class="ereg-step ereg-step--done">
+            <span class="ereg-step__dot"><mat-icon>check</mat-icon></span>
+            <div>
+              <strong>Registro enviado</strong>
+              <span>Datos recibidos por el sistema</span>
+            </div>
+          </div>
+          <div class="ereg-step ereg-step--active">
+            <span class="ereg-step__dot"><mat-icon>manage_search</mat-icon></span>
+            <div>
+              <strong>Revisión OATI</strong>
+              <span>El equipo verifica los datos de la empresa</span>
+            </div>
+          </div>
+          <div class="ereg-step">
+            <span class="ereg-step__dot">3</span>
+            <div>
+              <strong>Aprobación y acceso</strong>
+              <span>Recibirás credenciales para publicar beneficios</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="data-notice" role="note">
+          <mat-icon>info</mat-icon>
+          <div>
+            Una vez aprobada tu empresa podrás publicar beneficios, gestionar cupos
+            y hacer seguimiento a las solicitudes de los egresados.
+          </div>
+        </aside>
+
+        <button
+          type="button"
+          class="btn btn--ghost"
+          style="width:auto;padding-left:24px;padding-right:24px"
+          (click)="irAlPortal()"
+        >
+          Ir al portal de empresa
+          <mat-icon style="font-size:18px;height:18px;width:18px">arrow_forward</mat-icon>
+        </button>
+      </div>
+    </ng-container>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · OATI
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+    </nav>
+  </footer>
+
+</div>

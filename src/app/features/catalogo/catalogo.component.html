@@ -1,0 +1,279 @@
+<!-- ============================================================
+     Catálogo de Beneficios · OATI Beneficios UD
+     RF-002 (catálogo paginado con filtros)
+     RN-008 (sólo vigentes con cupos > 0) · RN-FILTROS
+     ============================================================ -->
+<div class="app dash">
+
+  <!-- ── Header autenticado ─────────────────────────────────── -->
+  <header class="dash-header">
+    <div class="dash-header__brand">
+      <img src="assets/images/logo-ud.png" alt="UD" />
+      <div class="dash-header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Egresados · OATI</span>
+      </div>
+    </div>
+
+    <nav class="dash-nav" aria-label="Navegación principal">
+      <a class="dash-nav__link" routerLink="/dashboard">Inicio</a>
+      <a class="dash-nav__link is-active" routerLink="/catalogo">Catálogo</a>
+      <a class="dash-nav__link" routerLink="/solicitudes">Mis solicitudes</a>
+    </nav>
+
+    <div class="dash-header__actions">
+      <div class="user-menu">
+        <button
+          class="user-menu__trigger"
+          type="button"
+          [attr.aria-expanded]="menuOpen"
+          (click)="toggleMenu()"
+          (blur)="closeMenu()"
+        >
+          <span class="avatar">{{ usuario.iniciales }}</span>
+          <span class="user-menu__name">
+            <span class="line1">{{ usuario.primerNombre }}</span>
+            <span class="line2">{{ usuario.rol }}</span>
+          </span>
+          <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(90deg)">chevron_right</mat-icon>
+        </button>
+        <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
+          <div class="user-menu__pop-head">
+            <strong>{{ usuario.nombre }}</strong>
+            <span>{{ usuario.email }}</span>
+            <span *ngIf="usuario.documento" class="muted">Doc: {{ usuario.documento }}</span>
+          </div>
+          <a class="user-menu__item" href="#perfil"><mat-icon>person</mat-icon>Mi perfil</a>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item user-menu__item--danger" type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contenido principal ───────────────────────────────── -->
+  <main class="dash-main cat-main">
+
+    <!-- Hero del catálogo -->
+    <section class="cat-hero">
+      <div class="cat-hero__text">
+        <div class="cat-hero__eyebrow">Catálogo de beneficios · 2026-1</div>
+        <h1 class="cat-hero__title">Beneficios <em>activos</em> para ti.</h1>
+        <p class="cat-hero__sub">
+          {{ conCuposCount }} beneficios con cupos disponibles
+          de <strong>{{ empresasCount }} empresas aliadas</strong>.
+          Solicita los que te interesen y haz seguimiento desde tu dashboard.
+        </p>
+      </div>
+
+      <!-- Beneficio destacado -->
+      <aside *ngIf="featured" class="cat-feature">
+        <div class="cat-feature__head">
+          <mat-icon style="font-size:14px;height:14px;width:14px">check_circle</mat-icon>
+          <span>Destacado del periodo</span>
+        </div>
+        <h2 class="cat-feature__title">{{ featured.titulo }}</h2>
+        <div class="cat-feature__by">
+          <span class="cat-feature__mark">{{ featured.empresa.slice(0, 1) }}</span>
+          <strong>{{ featured.empresa }}</strong>
+          <span class="cat-feature__cupos">{{ featured.cuposRestantes }} cupos restantes</span>
+        </div>
+        <a class="link cat-feature__link" href="#beneficio-{{ featured.id }}">
+          Ver detalle del beneficio
+          <mat-icon style="font-size:14px;height:14px;width:14px">arrow_forward</mat-icon>
+        </a>
+      </aside>
+    </section>
+
+    <!-- ── Barra de filtros ──────────────────────────────────── -->
+    <div class="cat-filters">
+
+      <!-- Búsqueda -->
+      <div class="cat-filters__search">
+        <mat-icon style="font-size:18px;height:18px;width:18px">search</mat-icon>
+        <input
+          type="search"
+          placeholder="Buscar por nombre del beneficio, empresa o palabra clave…"
+          [(ngModel)]="filtros.query"
+          name="query"
+          (ngModelChange)="onFiltrosChange()"
+        />
+      </div>
+
+      <!-- Categoría -->
+      <div class="cat-filters__group">
+        <label class="cat-filters__label">Categoría</label>
+        <select
+          class="cat-filters__select"
+          [(ngModel)]="filtros.categoria"
+          name="categoria"
+          (ngModelChange)="onFiltrosChange()"
+        >
+          <option *ngFor="let c of CATEGORIAS" [value]="c.value">{{ c.label }}</option>
+        </select>
+      </div>
+
+      <!-- Ordenar -->
+      <div class="cat-filters__group">
+        <label class="cat-filters__label">Ordenar</label>
+        <select
+          class="cat-filters__select"
+          [(ngModel)]="filtros.sort"
+          name="sort"
+          (ngModelChange)="onFiltrosChange()"
+        >
+          <option *ngFor="let s of SORT_OPTIONS" [value]="s.value">{{ s.label }}</option>
+        </select>
+      </div>
+
+      <!-- Toggle solo con cupos -->
+      <label class="cat-filters__toggle">
+        <input
+          type="checkbox"
+          [(ngModel)]="filtros.soloConCupos"
+          name="soloConCupos"
+          (ngModelChange)="onFiltrosChange()"
+        />
+        <span class="checkbox__box">
+          <mat-icon *ngIf="filtros.soloConCupos"
+                    style="font-size:12px;height:12px;width:12px;line-height:12px;color:#fff">check</mat-icon>
+        </span>
+        Sólo con cupos disponibles
+      </label>
+
+      <!-- Contador -->
+      <div class="cat-filters__count">
+        <strong>{{ beneficiosFiltrados.length }}</strong> de {{ beneficios.length }} beneficios
+      </div>
+    </div>
+
+    <!-- ── Grid de beneficios ────────────────────────────────── -->
+
+    <!-- Estado vacío -->
+    <div *ngIf="paginados.length === 0" class="empty-state">
+      <mat-icon>search</mat-icon>
+      <h3>No encontramos beneficios con esos filtros</h3>
+      <p>Prueba ampliar la categoría o quitar la palabra clave.</p>
+      <button class="btn btn--ghost" type="button"
+              style="width:auto;padding-left:24px;padding-right:24px"
+              (click)="resetFiltros()">
+        Restablecer filtros
+      </button>
+    </div>
+
+    <section *ngIf="paginados.length > 0" class="benef-grid">
+      <article
+        *ngFor="let b of paginados"
+        class="benef-card"
+        [class.is-agotado]="esAgotado(b)"
+        [id]="'beneficio-' + b.id"
+      >
+        <!-- Cabecera: categoría + destacado -->
+        <header class="benef-card__head">
+          <span class="categoria-tag" [ngStyle]="categoriaStyle(b.categoria)">
+            {{ b.categoria }}
+          </span>
+          <span *ngIf="b.destacado" class="benef-card__pill">
+            <mat-icon style="font-size:12px;height:12px;width:12px">check_circle</mat-icon>
+            Destacado
+          </span>
+        </header>
+
+        <!-- Título -->
+        <h3 class="benef-card__title">{{ b.titulo }}</h3>
+
+        <!-- Empresa -->
+        <div class="benef-card__empresa">
+          <span class="benef-card__empresa-mark" aria-hidden="true">
+            {{ b.empresa.charAt(0).toUpperCase() }}
+          </span>
+          <div>
+            <strong>{{ b.empresa }}</strong>
+            <span class="benef-card__pub">Publicado {{ b.publicado.toLowerCase() }}</span>
+          </div>
+        </div>
+
+        <!-- Resumen -->
+        <p class="benef-card__resumen">{{ b.resumen }}</p>
+
+        <!-- Meta: cupos + vigencia -->
+        <div class="benef-card__meta">
+          <div class="benef-card__cupo">
+            <div class="benef-card__cupo-head">
+              <span [class]="cuposNumCls(b)">{{ cuposLabel(b) }}</span>
+              <span class="benef-card__cupo-total">de {{ b.cuposIniciales }}</span>
+            </div>
+            <div class="benef-card__bar" aria-hidden="true">
+              <div [class]="barFillCls(b)" [style.width.%]="pct(b)"></div>
+            </div>
+          </div>
+          <div class="benef-card__vigencia">
+            <mat-icon style="font-size:14px;height:14px;width:14px">hourglass_empty</mat-icon>
+            <span>Vence {{ b.vigenciaHasta }}</span>
+          </div>
+        </div>
+
+        <!-- Footer: acciones -->
+        <footer class="benef-card__foot">
+          <button class="btn btn--ghost benef-card__detail" type="button">
+            Ver detalle
+          </button>
+          <button
+            class="btn btn--primary benef-card__cta"
+            type="button"
+            [disabled]="esAgotado(b)"
+            (click)="solicitar(b)"
+          >
+            <ng-container *ngIf="!esAgotado(b)">
+              Solicitar
+              <mat-icon style="font-size:16px;height:16px;width:16px">arrow_forward</mat-icon>
+            </ng-container>
+            <ng-container *ngIf="esAgotado(b)">Sin cupos</ng-container>
+          </button>
+        </footer>
+      </article>
+    </section>
+
+    <!-- ── Paginación ─────────────────────────────────────────── -->
+    <nav *ngIf="totalPages > 1" class="pagination" aria-label="Paginación">
+      <button class="pagination__btn" type="button"
+              [disabled]="page === 1" (click)="changePage(page - 1)">
+        <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(180deg)">chevron_right</mat-icon>
+        Anterior
+      </button>
+      <span class="pagination__info">Página <strong>{{ page }}</strong> de {{ totalPages }}</span>
+      <button class="pagination__btn" type="button"
+              [disabled]="page === totalPages" (click)="changePage(page + 1)">
+        Siguiente
+        <mat-icon style="font-size:16px;height:16px;width:16px">chevron_right</mat-icon>
+      </button>
+    </nav>
+
+    <!-- Habeas Data -->
+    <aside class="data-notice" role="note">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>Tus datos están protegidos.</strong>
+        Las empresas aliadas sólo acceden a los datos mínimos necesarios para gestionar tu solicitud.
+        <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · OATI
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+    </nav>
+  </footer>
+
+</div>

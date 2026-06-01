@@ -1,0 +1,323 @@
+<!-- ============================================================
+     Gestión de Beneficios de Empresa · OATI Beneficios UD
+     RF-005: publicar y gestionar beneficios
+     ============================================================ -->
+<div class="app dash">
+
+  <!-- ── Header empresa ────────────────────────────────────── -->
+  <header class="dash-header">
+    <div class="dash-header__brand">
+      <img src="assets/images/logo-ud.png" alt="UD" />
+      <div class="dash-header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Empresas · OATI</span>
+      </div>
+    </div>
+
+    <nav class="dash-nav" aria-label="Navegación empresa">
+      <a class="dash-nav__link" routerLink="/empresa/dashboard">Inicio</a>
+      <a class="dash-nav__link is-active" routerLink="/empresa/beneficios">Mis beneficios</a>
+    </nav>
+
+    <div class="dash-header__actions">
+      <div class="user-menu">
+        <button
+          class="user-menu__trigger"
+          type="button"
+          [attr.aria-expanded]="menuOpen"
+          (click)="toggleMenu()"
+          (blur)="closeMenu()"
+        >
+          <span class="avatar avatar--empresa">{{ empresa.iniciales }}</span>
+          <span class="user-menu__name">
+            <span class="line1">{{ empresa.nombre }}</span>
+            <span class="line2">{{ empresa.nit }}</span>
+          </span>
+          <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(90deg)">chevron_right</mat-icon>
+        </button>
+
+        <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
+          <div class="user-menu__pop-head">
+            <strong>{{ empresa.nombre }}</strong>
+            <span>{{ empresa.email }}</span>
+            <span class="muted">NIT {{ empresa.nit }}</span>
+          </div>
+          <a class="user-menu__item" routerLink="/empresa/dashboard">
+            <mat-icon>dashboard</mat-icon>Solicitudes recibidas
+          </a>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item user-menu__item--danger" type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contenido principal ───────────────────────────────── -->
+  <main class="dash-main">
+
+    <!-- ── Hero ──────────────────────────────────────────── -->
+    <section class="benef-mgmt-hero">
+      <div>
+        <div class="cat-hero__eyebrow">Mis beneficios publicados · 2026-1</div>
+        <h1 class="cat-hero__title">
+          Gestión de <em>beneficios</em>.
+        </h1>
+        <p class="cat-hero__sub">
+          {{ statsGlobales.activos }} {{ statsGlobales.activos === 1 ? 'beneficio activo' : 'beneficios activos' }}
+          · <strong>{{ statsGlobales.solicitudes }} solicitudes recibidas</strong>
+          <ng-container *ngIf="statsGlobales.pendientes > 0">
+            · <span class="benef-mgmt-hero__alert">
+              <mat-icon style="font-size:14px;height:14px;width:14px">warning</mat-icon>
+              {{ statsGlobales.pendientes }} por atender
+            </span>
+          </ng-container>
+        </p>
+      </div>
+      <button
+        type="button"
+        class="btn btn--primary"
+        style="width:auto;padding-left:20px;padding-right:20px"
+        (click)="toggleFormulario()"
+      >
+        <mat-icon style="font-size:18px;height:18px;width:18px">{{ mostrarFormulario ? 'close' : 'add' }}</mat-icon>
+        {{ mostrarFormulario ? 'Cancelar' : 'Publicar beneficio' }}
+      </button>
+    </section>
+
+    <!-- ── Formulario de publicación (RF-005) ─────────────── -->
+    <section *ngIf="mostrarFormulario" class="pub-form-section">
+      <div class="pub-form-section__inner">
+        <header class="pub-form-section__head">
+          <h2 class="pub-form-section__title">Nuevo beneficio</h2>
+          <p class="pub-form-section__sub">
+            El beneficio quedará visible en el catálogo de egresados inmediatamente tras publicarse.
+          </p>
+        </header>
+
+        <form class="pub-form" (ngSubmit)="publicar()" #pf="ngForm" novalidate>
+
+          <div class="pub-form__grid">
+
+            <!-- Título -->
+            <div class="field-group pub-form__full">
+              <label class="field-label" for="pub-titulo">
+                Nombre del beneficio <span class="required-mark">*</span>
+              </label>
+              <input
+                id="pub-titulo"
+                type="text"
+                class="field-input"
+                placeholder="Ej. Bootcamp Angular + Spring · 6 semanas"
+                [(ngModel)]="form.titulo"
+                name="titulo"
+                required
+              />
+            </div>
+
+            <!-- Categoría + Cupos -->
+            <div class="field-group">
+              <label class="field-label" for="pub-categoria">
+                Categoría <span class="required-mark">*</span>
+              </label>
+              <select
+                id="pub-categoria"
+                class="field-input"
+                [(ngModel)]="form.categoria"
+                name="categoria"
+                required
+              >
+                <option value="" disabled>Seleccionar…</option>
+                <option *ngFor="let c of CATEGORIAS" [value]="c.value">{{ c.label }}</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="pub-cupos">
+                Cupos disponibles <span class="required-mark">*</span>
+              </label>
+              <input
+                id="pub-cupos"
+                type="number"
+                class="field-input"
+                placeholder="Ej. 20"
+                [(ngModel)]="form.cuposIniciales"
+                name="cuposIniciales"
+                min="1"
+                required
+              />
+            </div>
+
+            <!-- Vigencia -->
+            <div class="field-group">
+              <label class="field-label" for="pub-vigencia">
+                Vigencia hasta <span class="required-mark">*</span>
+              </label>
+              <input
+                id="pub-vigencia"
+                type="date"
+                class="field-input"
+                [(ngModel)]="form.vigenciaHasta"
+                name="vigenciaHasta"
+                required
+              />
+            </div>
+
+            <!-- Resumen -->
+            <div class="field-group pub-form__full">
+              <label class="field-label" for="pub-resumen">
+                Descripción del beneficio <span class="required-mark">*</span>
+              </label>
+              <textarea
+                id="pub-resumen"
+                class="field-input"
+                style="height:96px;padding:12px;resize:vertical"
+                placeholder="Describe el beneficio, condiciones y cómo lo obtiene el egresado…"
+                [(ngModel)]="form.resumen"
+                name="resumen"
+                required
+                rows="4"
+              ></textarea>
+            </div>
+
+          </div><!-- /pub-form__grid -->
+
+          <div class="pub-form__footer">
+            <button type="button" class="btn btn--ghost" style="width:auto;padding:0 16px" (click)="toggleFormulario()">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              style="width:auto;padding:0 20px"
+              [disabled]="!formValido"
+            >
+              Publicar beneficio
+              <mat-icon style="font-size:18px;height:18px;width:18px">publish</mat-icon>
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Lista de beneficios ────────────────────────────── -->
+
+    <!-- Estado vacío -->
+    <div *ngIf="beneficios.length === 0" class="empty-state">
+      <mat-icon>inventory_2</mat-icon>
+      <h3>Aún no has publicado beneficios</h3>
+      <p>Usa el botón "Publicar beneficio" para agregar el primero.</p>
+    </div>
+
+    <!-- Cards de beneficios -->
+    <section *ngIf="beneficios.length > 0" class="benef-mgmt-list">
+      <article
+        *ngFor="let b of beneficios"
+        class="benef-mgmt-card"
+        [class.is-agotado]="b.estadoPublicacion === 'agotado'"
+        [class.is-vencido]="b.estadoPublicacion === 'vencido'"
+      >
+        <!-- Encabezado -->
+        <div class="benef-mgmt-card__head">
+          <span class="categoria-tag" [ngStyle]="categoriaStyle(b.categoria)">{{ b.categoria }}</span>
+          <span [class]="estadoCls(b)">
+            <mat-icon style="font-size:12px;height:12px;width:12px">{{ estadoIcon(b) }}</mat-icon>
+            {{ estadoLabel(b) }}
+          </span>
+        </div>
+
+        <!-- Título -->
+        <h3 class="benef-mgmt-card__title">{{ b.titulo }}</h3>
+
+        <!-- Resumen -->
+        <p class="benef-mgmt-card__resumen">{{ b.resumen }}</p>
+
+        <!-- Métricas -->
+        <div class="benef-mgmt-card__metrics">
+
+          <!-- Cupos -->
+          <div class="benef-mgmt-card__cupo">
+            <div class="benef-mgmt-card__cupo-row">
+              <span class="benef-mgmt-card__cupo-label">Cupos restantes</span>
+              <span class="benef-mgmt-card__cupo-val"
+                    [class.text-danger]="b.cuposRestantes === 0"
+                    [class.text-warning]="b.cuposRestantes > 0 && b.cuposRestantes <= 5">
+                {{ b.cuposRestantes }} / {{ b.cuposIniciales }}
+              </span>
+            </div>
+            <div class="benef-card__bar" aria-hidden="true">
+              <div class="benef-card__bar-fill"
+                   [class.is-escaso]="b.cuposRestantes > 0 && b.cuposRestantes <= 5"
+                   [class.is-agotado]="b.cuposRestantes === 0"
+                   [style.width.%]="pct(b)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Solicitudes recibidas -->
+          <div class="benef-mgmt-card__sol">
+            <div class="benef-mgmt-card__sol-item">
+              <mat-icon style="font-size:16px;height:16px;width:16px">mail</mat-icon>
+              <span><strong>{{ b.solicitudesRecibidas }}</strong> recibidas</span>
+            </div>
+            <div class="benef-mgmt-card__sol-item"
+                 [class.text-warning]="b.solicitudesPendientes > 0">
+              <mat-icon style="font-size:16px;height:16px;width:16px">hourglass_top</mat-icon>
+              <span><strong>{{ b.solicitudesPendientes }}</strong> pendientes</span>
+            </div>
+          </div>
+
+          <!-- Vigencia -->
+          <div class="benef-mgmt-card__vigencia">
+            <mat-icon style="font-size:14px;height:14px;width:14px">hourglass_empty</mat-icon>
+            <span>Vence {{ b.vigenciaHasta }}</span>
+          </div>
+
+        </div><!-- /metrics -->
+
+        <!-- Footer: acciones -->
+        <footer class="benef-mgmt-card__foot">
+          <a class="btn btn--ghost benef-mgmt-card__detail"
+             routerLink="/empresa/dashboard"
+             style="width:auto;padding:0 14px;height:34px;font-size:13px">
+            <mat-icon style="font-size:15px;height:15px;width:15px">inbox</mat-icon>
+            Ver solicitudes
+            <ng-container *ngIf="b.solicitudesPendientes > 0">
+              <span class="pending-dot">{{ b.solicitudesPendientes }}</span>
+            </ng-container>
+          </a>
+          <span class="benef-mgmt-card__pub">Publicado {{ b.publicado }}</span>
+        </footer>
+
+      </article>
+    </section>
+
+    <!-- Habeas Data -->
+    <aside class="data-notice" role="note">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>Publicación responsable.</strong>
+        Los beneficios publicados son visibles para todos los egresados registrados.
+        Asegúrate de que los datos de cupos y vigencia sean correctos antes de publicar.
+        <a class="link" href="#acuerdo">Acuerdo 004 de 2024 CSU</a>.
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · OATI
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+    </nav>
+  </footer>
+
+</div>

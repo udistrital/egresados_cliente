@@ -1,0 +1,166 @@
+<!-- ============================================================
+     Portal de Beneficios para Egresados UD · OATI
+     Pantalla de inicio de sesión
+     RF-001 (acceso egresado) · RF-004 (acceso empresa)
+     ============================================================ -->
+<div class="app">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header__brand">
+      <img src="assets/images/logo-ud.png" alt="Universidad Distrital Francisco José de Caldas" />
+      <div class="header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Egresados · OATI</span>
+      </div>
+    </div>
+    <div class="header__period">
+      Periodo activo: <strong>2026-1</strong>
+    </div>
+    <div class="header__actions">
+      <a class="icon-btn" href="#soporte" aria-label="Soporte y ayuda">
+        <mat-icon>help_outline</mat-icon>
+      </a>
+    </div>
+  </header>
+
+  <!-- ── Grilla principal ───────────────────────────────────── -->
+  <div class="main">
+
+    <!-- Hero (lado editorial) -->
+    <section class="hero">
+      <div class="hero__watermark" aria-hidden="true"></div>
+
+      <div class="hero__top" [class.swap]="true" [class.is-swapping]="swapping">
+        <span class="hero__eyebrow">{{ cfg.eyebrow }}</span>
+        <h1 class="hero__display">
+          {{ cfg.displayPre }}<em>{{ cfg.displayEm }}</em>{{ cfg.displayPost }}
+        </h1>
+        <p class="hero__lede">{{ cfg.lede }}</p>
+      </div>
+
+      <div class="hero__stats" [class.swap]="true" [class.is-swapping]="swapping">
+        <div class="stat" *ngFor="let s of cfg.stats">
+          <span class="stat__num">{{ s.num }}</span>
+          <span class="stat__label">{{ s.label }}</span>
+        </div>
+      </div>
+
+      <div class="hero__lockup">
+        <img src="assets/images/logo-ud-acreditacion.png"
+             alt="Universidad Distrital · Acreditación Institucional de Alta Calidad" />
+        <div class="hero__lockup-text">
+          <strong>Universidad Distrital Francisco José de Caldas</strong>
+          Acreditación Institucional de Alta Calidad · Bogotá D.C., Colombia
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel de login (lado derecho) -->
+    <div class="panel">
+      <div class="card">
+
+        <!-- Cabecera -->
+        <div class="card__head">
+          <div class="card__eyebrow">{{ cfg.cardEyebrow }}</div>
+          <h2 class="card__title">{{ cfg.cardTitle }}</h2>
+          <p class="card__subtitle">{{ cfg.cardSubtitle }}</p>
+        </div>
+
+        <!-- Selector de rol -->
+        <div class="role-tabs" role="tablist" aria-label="Selector de rol">
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="rol === 'egresado'"
+            class="role-tabs__option"
+            [class.active]="rol === 'egresado'"
+            (click)="setRol('egresado')"
+          >
+            <mat-icon>school</mat-icon>
+            Egresado
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="rol === 'empresa'"
+            class="role-tabs__option"
+            [class.active]="rol === 'empresa'"
+            (click)="setRol('empresa')"
+          >
+            <mat-icon>domain</mat-icon>
+            Empresa aliada
+          </button>
+        </div>
+
+        <!-- Alert de error -->
+        <div *ngIf="errorObj"
+             class="alert"
+             [class.alert--danger]="alertKind === 'danger'"
+             [class.alert--warning]="alertKind === 'warning'"
+             [attr.role]="alertKind === 'danger' ? 'alert' : 'status'"
+        >
+          <mat-icon>{{ alertKind === 'danger' ? 'error' : 'error_outline' }}</mat-icon>
+          <div>
+            <strong>{{ errorObj.title }}</strong>
+            {{ errorObj.body }}
+          </div>
+        </div>
+
+        <!-- Autenticación via WSO2 -->
+        <div class="wso2-auth">
+          <p class="wso2-auth__info">
+            La autenticación se gestiona de forma segura a través del servidor institucional de la Universidad Distrital (WSO2).
+            Al continuar serás redirigido para ingresar tus credenciales.
+          </p>
+
+          <button
+            class="btn btn--primary btn--wso2"
+            type="button"
+            [disabled]="loading"
+            (click)="login()"
+          >
+            <span *ngIf="loading" class="spinner" aria-hidden="true"></span>
+            <ng-container *ngIf="!loading">
+              <mat-icon style="font-size:20px;height:20px;width:20px">login</mat-icon>
+              Continuar con cuenta institucional UD
+            </ng-container>
+            <span *ngIf="loading">Redirigiendo a WSO2…</span>
+          </button>
+
+          <p class="wso2-auth__note">
+            <mat-icon style="font-size:14px;height:14px;width:14px;vertical-align:middle">lock</mat-icon>
+            Tus credenciales son manejadas exclusivamente por la Universidad Distrital. Este portal no las almacena.
+          </p>
+        </div><!-- /wso2-auth -->
+
+        <!-- Bloque de registro -->
+        <div class="register">
+          <span class="register__text">{{ cfg.register.text }}</span>
+          <a class="register__cta" [routerLink]="cfg.register.url" target="_blank" rel="noreferrer">
+            <img [src]="cfg.register.logo" alt="" />
+            {{ cfg.register.cta }}
+            <mat-icon style="font-size:14px;height:14px;width:14px;color:var(--fg-3)">open_in_new</mat-icon>
+          </a>
+        </div>
+
+      </div>
+    </div><!-- /panel -->
+
+  </div><!-- /main -->
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · Oficina Asesora de Tecnologías e Información (OATI)
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#estado">Estado del servicio</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+    </nav>
+  </footer>
+
+</div><!-- /app -->

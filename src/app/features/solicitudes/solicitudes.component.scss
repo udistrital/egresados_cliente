@@ -1,0 +1,320 @@
+/* ============================================================
+   Mis Solicitudes · OATI Beneficios UD
+   ============================================================ */
+
+.sol-main {
+  gap: var(--space-6);
+}
+
+/* ─── Page header ────────────────────────────────────────── */
+.sol-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.sol-page-head__title {
+  font-size: clamp(24px, 2.8vw, 34px);
+  font-weight: var(--weight-bold);
+  color: var(--fg-1);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-1);
+  line-height: 1.1;
+}
+
+.sol-page-head__sub {
+  font-size: 13.5px;
+  color: var(--fg-3);
+  margin: 0;
+}
+
+.sol-page-head__cta {
+  width: auto;
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ─── Stat pills (resumen de estado) ────────────────────── */
+.sol-stats {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.sol-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  min-width: 88px;
+
+  &:hover { border-color: var(--primary-300); background: var(--primary-50); }
+
+  &.sol-stat--active {
+    background: var(--primary-50);
+    border-color: var(--primary-400);
+  }
+}
+
+:root[data-theme='dark'] .sol-stat--active {
+  background: rgba(124, 160, 222, 0.14);
+  border-color: rgba(124, 160, 222, 0.4);
+}
+
+.sol-stat__num {
+  font-size: 26px;
+  font-weight: var(--weight-bold);
+  color: var(--fg-1);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.sol-stat--active .sol-stat__num { color: var(--primary-700); }
+:root[data-theme='dark'] .sol-stat--active .sol-stat__num { color: #C5D7F0; }
+
+.sol-stat__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--fg-3);
+  font-weight: var(--weight-bold);
+}
+
+/* ─── Panel principal ────────────────────────────────────── */
+.solicitudes-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* ─── Toolbar: búsqueda + chips ──────────────────────────── */
+.sol-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sol-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+
+  mat-icon { color: var(--fg-3); flex-shrink: 0; font-size: 18px; height: 18px; width: 18px; }
+
+  input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--fg-1);
+    outline: none;
+    &::placeholder { color: var(--fg-3); }
+  }
+}
+
+.sol-search__clear {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  &:hover { color: var(--fg-1); background: var(--surface-2); }
+}
+
+.sol-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-3) var(--space-5);
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: var(--weight-medium);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover { color: var(--fg-1); border-color: var(--gray-400); }
+
+  &.active {
+    background: var(--primary-500);
+    color: #fff;
+    border-color: var(--primary-500);
+  }
+}
+
+.filter-chip__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+}
+
+.filter-chip.active .filter-chip__count { background: rgba(255, 255, 255, 0.22); }
+
+/* ─── Tabla ──────────────────────────────────────────────── */
+.sol-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.sol-table__head {
+  display: grid;
+  grid-template-columns: 145px 1.6fr 1fr 160px 120px 72px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: 10px var(--space-5);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--fg-3);
+  font-weight: var(--weight-bold);
+}
+
+.sol-row {
+  display: grid;
+  grid-template-columns: 145px 1.6fr 1fr 160px 120px 72px;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s ease;
+
+  &:last-child { border-bottom: 0; }
+  &:hover { background: var(--surface-2); }
+
+  &.sol-row--atencion {
+    background: rgba(250, 165, 0, 0.06);
+    border-left: 3px solid rgba(250, 165, 0, 0.6);
+    padding-left: calc(var(--space-5) - 3px);
+    &:hover { background: rgba(250, 165, 0, 0.10); }
+  }
+}
+
+@media (max-width: 1050px) {
+  .sol-table__head { display: none; }
+
+  .sol-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "radicado  actions"
+      "beneficio beneficio"
+      "empresa   estado"
+      "fecha     fecha";
+    row-gap: 6px;
+
+    .sol-row__radicado  { grid-area: radicado; }
+    .sol-row__beneficio { grid-area: beneficio; }
+    .sol-row__empresa   { grid-area: empresa; }
+    .sol-row__fecha     { grid-area: fecha; font-size: 11px; }
+    .sol-row__actions   { grid-area: actions; }
+    .estado-badge       { grid-area: estado; justify-self: end; }
+  }
+}
+
+.sol-row__radicado {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-2);
+  letter-spacing: -0.01em;
+}
+
+.sol-row__beneficio {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  .title {
+    font-size: 14px;
+    font-weight: var(--weight-medium);
+    color: var(--fg-1);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .categoria {
+    font-size: 11px;
+    color: var(--fg-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+}
+
+.sol-row__empresa { font-size: 13px; color: var(--fg-2); }
+.sol-row__fecha   { font-size: 12.5px; color: var(--fg-3); }
+
+.sol-row__actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.row-action {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+
+  &:hover { background: var(--surface-3); color: var(--fg-1); border-color: var(--border); }
+  &.row-action--danger:hover {
+    color: var(--danger-accent);
+    border-color: rgba(178, 34, 34, 0.3);
+    background: rgba(178, 34, 34, 0.05);
+  }
+}
+
+/* ─── Footer de tabla ────────────────────────────────────── */
+.sol-footer {
+  padding: var(--space-3) var(--space-5);
+  font-size: 12px;
+  color: var(--fg-3);
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+  text-transform: capitalize;
+}

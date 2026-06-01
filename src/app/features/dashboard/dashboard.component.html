@@ -1,0 +1,220 @@
+<!-- ============================================================
+     Inicio · Portal de Beneficios para Egresados UD · OATI
+     ============================================================ -->
+<div class="app dash">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header class="dash-header">
+    <div class="dash-header__brand">
+      <img src="assets/images/logo-ud.png" alt="UD" />
+      <div class="dash-header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Egresados · OATI</span>
+      </div>
+    </div>
+
+    <nav class="dash-nav" aria-label="Navegación principal">
+      <a class="dash-nav__link is-active" routerLink="/dashboard">Inicio</a>
+      <a class="dash-nav__link" routerLink="/catalogo">Catálogo</a>
+      <a class="dash-nav__link" routerLink="/solicitudes">Mis solicitudes</a>
+    </nav>
+
+    <div class="dash-header__actions">
+      <div class="user-menu">
+        <button
+          class="user-menu__trigger"
+          type="button"
+          [attr.aria-expanded]="menuOpen"
+          (click)="toggleMenu()"
+          (blur)="closeMenu()"
+        >
+          <span class="avatar">{{ usuario.iniciales }}</span>
+          <span class="user-menu__name">
+            <span class="line1">{{ usuario.primerNombre }}</span>
+            <span class="line2">{{ usuario.rol }}</span>
+          </span>
+          <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(90deg)">chevron_right</mat-icon>
+        </button>
+
+        <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
+          <div class="user-menu__pop-head">
+            <strong>{{ usuario.nombre }}</strong>
+            <span>{{ usuario.email }}</span>
+            <span *ngIf="usuario.documento" class="muted">Doc: {{ usuario.documento }}</span>
+          </div>
+          <a class="user-menu__item" href="#perfil" role="menuitem">
+            <mat-icon>person</mat-icon>Mi perfil
+          </a>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item user-menu__item--danger" type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contenido principal ───────────────────────────────── -->
+  <main class="dash-main">
+
+    <!-- ── Greeting ──────────────────────────────────────────── -->
+    <section class="greeting">
+      <div class="greeting__text">
+        <div class="greeting__eyebrow">Periodo activo · 2026-1</div>
+        <h1 class="greeting__title">
+          {{ usuario.saludo }}, <em>{{ usuario.primerNombre }}</em>.
+        </h1>
+        <p class="greeting__sub">
+          Este es tu resumen de beneficios. Puedes gestionar hasta
+          <strong>{{ LIMITE_ACTIVAS }} solicitudes activas</strong> a la vez.
+        </p>
+      </div>
+
+      <!-- Banner contextual -->
+      <div class="ctx-banner"
+           [class.ctx-banner--atencion]="banner.tipo === 'atencion'"
+           [class.ctx-banner--proceso]="banner.tipo === 'proceso'"
+           [class.ctx-banner--ok]="banner.tipo === 'ok'"
+           [class.ctx-banner--vacio]="banner.tipo === 'vacio'"
+      >
+        <mat-icon class="ctx-banner__icon">{{ banner.icon }}</mat-icon>
+        <span class="ctx-banner__texto">{{ banner.texto }}</span>
+        <a *ngIf="banner.cta && banner.ctaRuta"
+           class="ctx-banner__cta"
+           [routerLink]="banner.ctaRuta">
+          {{ banner.cta }}
+          <mat-icon style="font-size:14px;height:14px;width:14px">arrow_forward</mat-icon>
+        </a>
+        <a *ngIf="banner.cta && !banner.ctaRuta"
+           class="ctx-banner__cta"
+           routerLink="/solicitudes">
+          {{ banner.cta }}
+          <mat-icon style="font-size:14px;height:14px;width:14px">arrow_forward</mat-icon>
+        </a>
+      </div>
+    </section>
+
+    <!-- ── Cuerpo: solicitudes recientes + novedades ──────────── -->
+    <div class="home-grid">
+
+      <!-- ── Solicitudes recientes ──────────────────────────── -->
+      <section class="home-panel">
+        <header class="home-panel__head">
+          <div>
+            <h2 class="home-panel__title">Solicitudes activas</h2>
+            <p class="home-panel__sub">Las que están en curso ahora mismo</p>
+          </div>
+          <a class="home-panel__link" routerLink="/solicitudes">
+            Ver todas
+            <mat-icon style="font-size:14px;height:14px;width:14px">arrow_forward</mat-icon>
+          </a>
+        </header>
+
+        <!-- Vacío -->
+        <div *ngIf="!haySolicitudesActivas" class="home-empty">
+          <mat-icon>inbox</mat-icon>
+          <p>Aún no tienes solicitudes activas.</p>
+          <a class="btn btn--ghost home-empty__cta" routerLink="/catalogo">
+            Explorar catálogo
+            <mat-icon style="font-size:15px;height:15px;width:15px">arrow_forward</mat-icon>
+          </a>
+        </div>
+
+        <!-- Lista compacta -->
+        <ul *ngIf="haySolicitudesActivas" class="solicitud-compact-list">
+          <li *ngFor="let s of solicitudesRecientes" class="solicitud-compact"
+              [class.solicitud-compact--atencion]="s.estado === 'info'">
+            <span [class]="badgeCls(s.estado)" style="flex-shrink:0">
+              <mat-icon style="font-size:12px;height:12px;width:12px">{{ badgeIcon(s.estado) }}</mat-icon>
+              {{ badgeLabel(s.estado) }}
+            </span>
+            <div class="solicitud-compact__body">
+              <span class="solicitud-compact__titulo">{{ s.beneficio }}</span>
+              <span class="solicitud-compact__meta">{{ s.empresa }} · {{ s.actualizada }}</span>
+            </div>
+            <button class="row-action" type="button" title="Ver detalle"
+                    aria-label="Ver detalle de solicitud">
+              <mat-icon style="font-size:15px;height:15px;width:15px">chevron_right</mat-icon>
+            </button>
+          </li>
+        </ul>
+
+        <!-- Límite de solicitudes activas -->
+        <div *ngIf="haySolicitudesActivas" class="home-panel__footer">
+          <div class="cupo-bar">
+            <span class="cupo-bar__label">
+              {{ solicitudesRecientes.length }} de {{ LIMITE_ACTIVAS }} cupos activos usados
+            </span>
+            <div class="cupo-bar__track" aria-hidden="true">
+              <div class="cupo-bar__fill" [style.width.%]="activasPct"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Novedades del catálogo ─────────────────────────── -->
+      <section class="home-panel">
+        <header class="home-panel__head">
+          <div>
+            <h2 class="home-panel__title">Novedades del catálogo</h2>
+            <p class="home-panel__sub">Publicados recientemente para egresados UD</p>
+          </div>
+          <a class="home-panel__link" routerLink="/catalogo">
+            Ver catálogo
+            <mat-icon style="font-size:14px;height:14px;width:14px">arrow_forward</mat-icon>
+          </a>
+        </header>
+
+        <ul class="novedad-list">
+          <li *ngFor="let b of BENEFICIOS_NOVEDAD" class="novedad-card">
+            <span class="novedad-card__mark" aria-hidden="true">
+              {{ categoriaIniciales(b) }}
+            </span>
+            <div class="novedad-card__body">
+              <span class="novedad-card__titulo">{{ b.titulo }}</span>
+              <span class="novedad-card__meta">
+                {{ b.empresa }} · {{ b.cuposRestantes }} cupos
+              </span>
+            </div>
+            <button class="btn btn--ghost novedad-card__cta" type="button"
+                    routerLink="/catalogo" style="width:auto;height:34px;font-size:12.5px;padding:0 12px">
+              Solicitar
+            </button>
+          </li>
+        </ul>
+
+        <div class="home-panel__footer">
+          <a class="home-panel__link" routerLink="/catalogo">
+            <mat-icon style="font-size:15px;height:15px;width:15px">grid_view</mat-icon>
+            Ver los {{ 12 }} beneficios disponibles
+          </a>
+        </div>
+      </section>
+
+    </div><!-- /home-grid -->
+
+    <!-- Habeas Data -->
+    <aside class="data-notice" role="note">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>Tus datos están protegidos.</strong>
+        Las empresas aliadas sólo acceden a los datos mínimos para gestionar tu solicitud.
+        <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+      </div>
+    </aside>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · OATI
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#estado">Estado del servicio</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+    </nav>
+  </footer>
+
+</div>

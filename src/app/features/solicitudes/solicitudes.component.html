@@ -1,0 +1,211 @@
+<!-- ============================================================
+     Mis Solicitudes · Portal de Beneficios para Egresados UD
+     ============================================================ -->
+<div class="app dash">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header class="dash-header">
+    <div class="dash-header__brand">
+      <img src="assets/images/logo-ud.png" alt="UD" />
+      <div class="dash-header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Egresados · OATI</span>
+      </div>
+    </div>
+
+    <nav class="dash-nav" aria-label="Navegación principal">
+      <a class="dash-nav__link" routerLink="/dashboard">Inicio</a>
+      <a class="dash-nav__link" routerLink="/catalogo">Catálogo</a>
+      <a class="dash-nav__link is-active" routerLink="/solicitudes">Mis solicitudes</a>
+    </nav>
+
+    <div class="dash-header__actions">
+      <div class="user-menu">
+        <button
+          class="user-menu__trigger"
+          type="button"
+          [attr.aria-expanded]="menuOpen"
+          (click)="toggleMenu()"
+          (blur)="closeMenu()"
+        >
+          <span class="avatar">{{ usuario.iniciales }}</span>
+          <span class="user-menu__name">
+            <span class="line1">{{ usuario.primerNombre }}</span>
+            <span class="line2">{{ usuario.rol }}</span>
+          </span>
+          <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(90deg)">chevron_right</mat-icon>
+        </button>
+        <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
+          <div class="user-menu__pop-head">
+            <strong>{{ usuario.nombre }}</strong>
+            <span>{{ usuario.email }}</span>
+            <span *ngIf="usuario.documento" class="muted">Doc: {{ usuario.documento }}</span>
+          </div>
+          <a class="user-menu__item" href="#perfil"><mat-icon>person</mat-icon>Mi perfil</a>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item user-menu__item--danger" type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contenido ─────────────────────────────────────────── -->
+  <main class="dash-main sol-main">
+
+    <!-- Page header -->
+    <div class="sol-page-head">
+      <div class="sol-page-head__text">
+        <h1 class="sol-page-head__title">Mis solicitudes</h1>
+        <p class="sol-page-head__sub">
+          Historial completo de solicitudes de beneficios · periodo 2026-1
+        </p>
+      </div>
+      <a class="btn btn--primary sol-page-head__cta" routerLink="/catalogo">
+        <mat-icon style="font-size:18px;height:18px;width:18px">add</mat-icon>
+        Nueva solicitud
+      </a>
+    </div>
+
+    <!-- Resumen de estado -->
+    <div class="sol-stats">
+      <div *ngFor="let f of FILTROS" class="sol-stat"
+           [class.sol-stat--active]="filtro === f.value"
+           (click)="setFiltro(f.value)"
+           role="button" tabindex="0">
+        <span class="sol-stat__num">{{ count(f.value) }}</span>
+        <span class="sol-stat__label">{{ f.label }}</span>
+      </div>
+    </div>
+
+    <!-- Tabla de solicitudes -->
+    <section class="solicitudes-panel">
+
+      <!-- Barra de búsqueda y filtros -->
+      <div class="sol-toolbar">
+        <div class="sol-search">
+          <mat-icon>search</mat-icon>
+          <input
+            type="search"
+            placeholder="Buscar por radicado, beneficio o empresa…"
+            [(ngModel)]="query"
+            name="query"
+          />
+          <button *ngIf="query" class="sol-search__clear" type="button"
+                  (click)="query = ''" aria-label="Limpiar búsqueda">
+            <mat-icon style="font-size:16px;height:16px;width:16px">close</mat-icon>
+          </button>
+        </div>
+
+        <div class="sol-chips" role="tablist" aria-label="Filtrar por estado">
+          <button
+            *ngFor="let opt of FILTROS"
+            type="button"
+            role="tab"
+            [attr.aria-selected]="filtro === opt.value"
+            class="filter-chip"
+            [class.active]="filtro === opt.value"
+            (click)="setFiltro(opt.value)"
+          >
+            <mat-icon style="font-size:13px;height:13px;width:13px">{{ opt.icon }}</mat-icon>
+            {{ opt.label }}
+            <span class="filter-chip__count">{{ count(opt.value) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resultado vacío -->
+      <div *ngIf="solicitudesFiltradas.length === 0" class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <h3>Sin solicitudes con ese filtro</h3>
+        <p>Prueba otro estado o explora el catálogo para crear tu primera solicitud.</p>
+        <a class="btn btn--ghost" routerLink="/catalogo"
+           style="width:auto;padding-left:24px;padding-right:24px">
+          Ir al catálogo
+          <mat-icon style="font-size:16px;height:16px;width:16px">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="solicitudesFiltradas.length > 0" class="sol-table">
+
+        <div class="sol-table__head" aria-hidden="true">
+          <span>Radicado</span>
+          <span>Beneficio</span>
+          <span>Empresa</span>
+          <span>Estado</span>
+          <span>Actualizada</span>
+          <span></span>
+        </div>
+
+        <article *ngFor="let s of solicitudesFiltradas" class="sol-row"
+                 [class.sol-row--atencion]="s.estado === 'info'">
+
+          <span class="sol-row__radicado">{{ s.radicado }}</span>
+
+          <div class="sol-row__beneficio">
+            <span class="title">{{ s.beneficio }}</span>
+            <span class="categoria">{{ s.categoria }}</span>
+          </div>
+
+          <span class="sol-row__empresa">{{ s.empresa }}</span>
+
+          <span [class]="badgeCls(s.estado)">
+            <mat-icon style="font-size:12px;height:12px;width:12px">{{ badgeIcon(s.estado) }}</mat-icon>
+            {{ badgeLabel(s.estado) }}
+          </span>
+
+          <span class="sol-row__fecha">{{ s.actualizada }}</span>
+
+          <div class="sol-row__actions">
+            <button class="row-action" type="button" title="Ver detalle">
+              <mat-icon style="font-size:16px;height:16px;width:16px">open_in_new</mat-icon>
+            </button>
+            <button
+              *ngIf="puedeCancel(s)"
+              class="row-action row-action--danger"
+              type="button"
+              title="Cancelar solicitud"
+              (click)="cancelarSolicitud(s.radicado)"
+            >
+              <mat-icon style="font-size:16px;height:16px;width:16px">close</mat-icon>
+            </button>
+          </div>
+        </article>
+
+      </div><!-- /sol-table -->
+
+      <!-- Contador de resultados -->
+      <div *ngIf="solicitudesFiltradas.length > 0" class="sol-footer">
+        {{ solicitudesFiltradas.length }}
+        {{ solicitudesFiltradas.length === 1 ? 'solicitud' : 'solicitudes' }}
+        · {{ filtro === 'todas' ? 'historial completo' : filtro }}
+      </div>
+
+    </section>
+
+    <!-- Habeas Data -->
+    <aside class="data-notice" role="note">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>Tus datos están protegidos.</strong>
+        Las empresas aliadas sólo acceden a los datos mínimos para gestionar tu solicitud.
+        <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+      </div>
+    </aside>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · OATI
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+    </nav>
+  </footer>
+
+</div>

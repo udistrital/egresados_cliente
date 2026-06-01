@@ -1,0 +1,546 @@
+/* ============================================================
+   Login · Portal de Beneficios Egresados UD · OATI
+   ============================================================ */
+
+/* ─── App shell ──────────────────────────────────────────── */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+.header {
+  height: 64px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-8);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 10;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+
+  img { height: 36px; width: auto; display: block; }
+}
+
+.header__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+
+  .product {
+    font-weight: var(--weight-bold);
+    color: var(--fg-1);
+    font-size: 15px;
+    letter-spacing: -0.005em;
+  }
+  .org {
+    font-size: 10.5px;
+    color: var(--fg-3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 3px;
+    font-weight: var(--weight-medium);
+  }
+}
+
+.header__period {
+  display: none;
+  font-size: 12px;
+  color: var(--fg-3);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  strong { color: var(--fg-1); font-weight: var(--weight-medium); }
+
+  @media (min-width: 720px) { display: block; }
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* ─── Main grid ──────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  min-height: 0;
+
+  @media (min-width: 760px) {
+    grid-template-columns: 1.1fr 1fr;
+  }
+}
+
+/* ─── Hero (editorial) ───────────────────────────────────── */
+.hero {
+  padding: var(--space-10) var(--space-8) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-10);
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  container-type: inline-size;
+
+  @media (min-width: 760px) {
+    padding: clamp(36px, 5cqw, 72px) clamp(28px, 5cqw, 64px);
+    border-right: 1px solid var(--border);
+  }
+}
+
+/* Watermark institucional — escudo UD al 4% opacidad */
+.hero__watermark {
+  position: absolute;
+  right: -10%;
+  bottom: -18%;
+  width: 460px;
+  height: 460px;
+  background: url('/assets/images/logo-ud.png') center / contain no-repeat;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  filter: grayscale(1);
+}
+
+:root[data-theme='dark'] .hero__watermark {
+  opacity: 0.07;
+  filter: grayscale(1) invert(1);
+}
+
+.hero__top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  color: var(--primary-500);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+
+  &::before {
+    content: '';
+    width: 24px;
+    height: 1.5px;
+    background: var(--primary-500);
+  }
+}
+
+.hero__display {
+  font-size: clamp(28px, 6.5cqw, 52px);
+  line-height: 1.04;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.025em;
+  color: var(--fg-1);
+  margin: 0;
+  max-width: 14ch;
+  text-wrap: balance;
+
+  em {
+    font-style: normal;
+    color: var(--primary-500);
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -0.04em;
+      height: 0.07em;
+      background: var(--accent-500);
+      opacity: 0.4;
+      border-radius: 2px;
+    }
+  }
+}
+
+.hero__lede {
+  font-size: clamp(13px, 1.8cqw, 16px);
+  line-height: 1.55;
+  color: var(--fg-2);
+  margin: 0;
+  max-width: 44ch;
+  text-wrap: pretty;
+}
+
+/* ─── Stats ──────────────────────────────────────────────── */
+.hero__stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--border);
+}
+
+.stat__num {
+  font-size: clamp(20px, 3.4cqw, 32px);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.03em;
+  color: var(--fg-1);
+  line-height: 1;
+  display: block;
+  margin-bottom: var(--space-2);
+}
+.stat__label {
+  font-size: 12px;
+  color: var(--fg-3);
+  line-height: 1.35;
+  display: block;
+}
+
+/* ─── Lockup institucional ───────────────────────────────── */
+.hero__lockup {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+
+  img { height: 56px; width: auto; flex-shrink: 0; }
+}
+
+.hero__lockup-text {
+  font-size: 11.5px;
+  color: var(--fg-3);
+  line-height: 1.4;
+  max-width: 340px;
+
+  strong {
+    display: block;
+    color: var(--fg-1);
+    font-weight: var(--weight-medium);
+    font-size: 12.5px;
+    margin-bottom: 2px;
+  }
+}
+
+/* ─── Panel (login form) ─────────────────────────────────── */
+.panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-6);
+  background: var(--surface);
+
+  @media (min-width: 760px) {
+    padding: clamp(40px, 4vw, 72px) clamp(32px, 4vw, 56px);
+  }
+}
+
+:root[data-theme='dark'] .panel { background: var(--surface); }
+
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.card__head { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.card__eyebrow {
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.card__title {
+  font-size: 28px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--fg-1);
+  margin: 0;
+  line-height: 1.1;
+}
+.card__subtitle {
+  color: var(--fg-3);
+  font-size: 14px;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+
+/* ─── Selector de rol ────────────────────────────────────── */
+.role-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+:root[data-theme='dark'] .role-tabs { background: var(--surface-3); }
+
+.role-tabs__option {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px 8px;
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: var(--weight-medium);
+  color: var(--fg-3);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  mat-icon { opacity: 0.75; font-size: 18px; height: 18px; width: 18px; }
+
+  &[aria-selected='true'],
+  &.active {
+    background: var(--surface);
+    color: var(--fg-1);
+    box-shadow: 0 1px 2px rgba(20, 56, 115, 0.08), 0 0 0 1px var(--border);
+
+    mat-icon { color: var(--primary-500); opacity: 1; }
+  }
+
+  &:hover:not([aria-selected='true']):not(.active) { color: var(--fg-2); }
+  &:focus-visible { outline: none; box-shadow: var(--ring-primary); }
+}
+
+:root[data-theme='dark'] .role-tabs__option.active {
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
+}
+
+/* ─── Formulario ─────────────────────────────────────────── */
+.form { display: grid; gap: var(--space-4); }
+
+.field { display: grid; gap: 6px; }
+
+.field__label {
+  font-size: 12.5px;
+  font-weight: var(--weight-medium);
+  color: var(--fg-2);
+  letter-spacing: 0.01em;
+}
+
+.field__hint {
+  font-size: 11.5px;
+  color: var(--fg-3);
+  margin-top: 2px;
+}
+
+.field__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field__input {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--space-4);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--fg-1);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &::placeholder { color: var(--gray-400); }
+  &:hover { border-color: var(--gray-400); }
+  &:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: var(--ring-primary);
+  }
+}
+
+.field--error .field__input { border-color: var(--danger-accent); }
+.field--error .field__input:focus { box-shadow: var(--ring-danger); }
+
+.field__error {
+  font-size: 12px;
+  color: var(--danger-accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.field__toggle-pw {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px; height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--fg-3);
+  border-radius: var(--radius-sm);
+
+  &:hover { background: var(--surface-2); color: var(--fg-2); }
+  &:focus-visible { outline: none; box-shadow: var(--ring-primary); }
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 13px;
+  margin-top: var(--space-1);
+}
+
+/* ─── Checkbox custom ────────────────────────────────────── */
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--fg-2);
+  position: relative;
+
+  input { position: absolute; opacity: 0; pointer-events: none; }
+}
+
+.checkbox__box {
+  width: 17px; height: 17px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  transition: background 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+
+  mat-icon { color: transparent; }
+}
+
+.checkbox input:checked + .checkbox__box {
+  background: var(--primary-500);
+  border-color: var(--primary-500);
+  mat-icon { color: #fff; }
+}
+
+/* ─── Link ───────────────────────────────────────────────── */
+.link {
+  color: var(--link);
+  text-decoration: none;
+  font-weight: var(--weight-medium);
+  transition: color 0.15s ease;
+
+  &:hover { color: var(--link-hover); text-decoration: underline; text-underline-offset: 3px; }
+}
+
+/* ─── Bloque de registro ─────────────────────────────────── */
+.register {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--border);
+}
+
+.register__text { font-size: 13.5px; color: var(--fg-3); }
+
+.register__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-medium);
+  font-size: 13.5px;
+  color: var(--fg-1);
+  background: var(--surface);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+  cursor: pointer;
+
+  img { width: 22px; height: 22px; border-radius: 4px; flex-shrink: 0; }
+
+  &:hover {
+    border-color: var(--primary-300);
+    background: var(--primary-50);
+  }
+}
+
+:root[data-theme='dark'] .register__cta {
+  background: var(--surface-2);
+  &:hover { background: var(--surface-3); border-color: var(--primary-500); }
+}
+
+
+/* ─── WSO2 Auth block ─────────────────────────────────────── */
+.wso2-auth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.wso2-auth__info {
+  font-size: 13.5px;
+  color: var(--fg-2);
+  line-height: 1.55;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.btn--wso2 {
+  width: 100%;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 48px;
+  font-size: 15px;
+}
+
+.wso2-auth__note {
+  font-size: 11.5px;
+  color: var(--fg-3);
+  margin: 0;
+  text-align: center;
+  line-height: 1.4;
+
+  mat-icon { margin-right: 4px; }
+}

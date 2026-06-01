@@ -1,0 +1,335 @@
+<!-- ============================================================
+     Dashboard de Empresa · OATI Beneficios UD
+     RF-006 (bandeja de solicitudes) · RF-007 (respuesta)
+     ============================================================ -->
+<div class="app dash">
+
+  <!-- ── Header empresa ────────────────────────────────────── -->
+  <header class="dash-header">
+    <div class="dash-header__brand">
+      <img src="assets/images/logo-ud.png" alt="UD" />
+      <div class="dash-header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Empresas · OATI</span>
+      </div>
+    </div>
+
+    <nav class="dash-nav" aria-label="Navegación empresa">
+      <a class="dash-nav__link is-active" routerLink="/empresa/dashboard">Inicio</a>
+      <a class="dash-nav__link" routerLink="/empresa/beneficios">Mis beneficios</a>
+    </nav>
+
+    <div class="dash-header__actions">
+      <div class="user-menu">
+        <button
+          class="user-menu__trigger"
+          type="button"
+          [attr.aria-expanded]="menuOpen"
+          (click)="toggleMenu()"
+          (blur)="closeMenu()"
+        >
+          <span class="avatar avatar--empresa">{{ empresa.iniciales }}</span>
+          <span class="user-menu__name">
+            <span class="line1">{{ empresa.nombre }}</span>
+            <span class="line2">{{ empresa.nit }}</span>
+          </span>
+          <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(90deg)">chevron_right</mat-icon>
+        </button>
+
+        <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
+          <div class="user-menu__pop-head">
+            <strong>{{ empresa.nombre }}</strong>
+            <span>{{ empresa.email }}</span>
+            <span class="muted">NIT {{ empresa.nit }}</span>
+          </div>
+          <a class="user-menu__item" routerLink="/empresa/beneficios">
+            <mat-icon>inventory_2</mat-icon>Mis beneficios
+          </a>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item user-menu__item--danger" type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contenido principal ───────────────────────────────── -->
+  <main class="dash-main">
+
+    <!-- Greeting empresa -->
+    <section class="greeting">
+      <div class="greeting__text">
+        <div class="greeting__eyebrow">Periodo activo · 2026-1</div>
+        <h1 class="greeting__title">
+          Hola, <em>{{ empresa.nombre }}</em>.
+        </h1>
+        <p class="greeting__sub">
+          Aquí están las solicitudes de beneficios recibidas de egresados UD.
+          Revisa cada solicitud y responde oportunamente.
+        </p>
+      </div>
+      <a class="btn btn--primary greeting__cta" routerLink="/empresa/beneficios">
+        Publicar beneficio
+        <mat-icon style="font-size:18px;height:18px;width:18px">add</mat-icon>
+      </a>
+    </section>
+
+    <!-- ── Stat grid ──────────────────────────────────────── -->
+    <section class="stat-grid">
+
+      <article class="stat-card stat-card--hero">
+        <div class="stat-card__head">
+          <span class="stat-card__label">Por atender</span>
+          <span class="stat-card__chip">{{ stats.activas }} activas</span>
+        </div>
+        <div class="stat-card__num">{{ stats.pendientes }}</div>
+        <div class="stat-card__sub">
+          <ng-container *ngIf="stats.pendientes > 0">
+            {{ stats.pendientes === 1 ? 'Solicitud pendiente' : 'Solicitudes pendientes' }}
+            de respuesta inmediata.
+          </ng-container>
+          <ng-container *ngIf="stats.pendientes === 0">
+            Sin solicitudes pendientes. ¡Estás al día!
+          </ng-container>
+        </div>
+        <div class="stat-card__progress" aria-hidden="true">
+          <div class="stat-card__progress-fill"
+               [style.width.%]="stats.total > 0 ? (stats.activas / stats.total) * 100 : 0">
+          </div>
+        </div>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-card__label">En revisión / Info</span>
+        <div class="stat-card__num">{{ stats.revision + stats.info }}</div>
+        <div class="stat-card__sub">Solicitudes en proceso.</div>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-card__label">Aprobadas</span>
+        <div class="stat-card__num">{{ stats.aprobadas }}</div>
+        <div class="stat-card__sub">Beneficios otorgados a egresados.</div>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-card__label">Rechazadas</span>
+        <div class="stat-card__num">{{ stats.rechazadas }}</div>
+        <div class="stat-card__sub">Con justificación al egresado.</div>
+      </article>
+
+      <article class="stat-card stat-card--muted">
+        <span class="stat-card__label">Total recibidas</span>
+        <div class="stat-card__num">{{ stats.total }}</div>
+        <div class="stat-card__sub">Solicitudes en este periodo.</div>
+      </article>
+
+    </section>
+
+    <!-- ── Bandeja de solicitudes recibidas ─────────────────── -->
+    <section class="solicitudes" id="solicitudes">
+      <header class="solicitudes__header">
+        <div>
+          <h2 class="solicitudes__title">Solicitudes recibidas</h2>
+          <p class="solicitudes__sub">
+            Ordenadas por última actualización · {{ solicitudesFiltradas.length }}
+            {{ solicitudesFiltradas.length === 1 ? 'resultado' : 'resultados' }}
+          </p>
+        </div>
+        <div class="solicitudes__search">
+          <mat-icon style="font-size:16px;height:16px;width:16px">search</mat-icon>
+          <input
+            type="search"
+            placeholder="Buscar por egresado, programa, radicado…"
+            [(ngModel)]="query"
+            name="query"
+          />
+        </div>
+      </header>
+
+      <!-- Filtros -->
+      <div class="solicitudes__filters" role="tablist" aria-label="Filtrar solicitudes">
+        <button
+          *ngFor="let f of FILTROS"
+          type="button"
+          role="tab"
+          [attr.aria-selected]="filtro === f.value"
+          class="filter-chip"
+          (click)="setFiltro(f.value)"
+        >
+          {{ f.label }}
+          <span class="filter-chip__count">{{ count(f.value) }}</span>
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="solicitudes__list">
+
+        <!-- Cabecera -->
+        <div class="solicitud-head emp-solicitud-head" aria-hidden="true">
+          <span>Radicado</span>
+          <span>Egresado</span>
+          <span>Programa</span>
+          <span>Estado</span>
+          <span>Actualizada</span>
+          <span>Acciones</span>
+        </div>
+
+        <!-- Estado vacío -->
+        <div *ngIf="solicitudesFiltradas.length === 0" class="empty-state">
+          <mat-icon>inbox</mat-icon>
+          <h3>Sin solicitudes con este filtro</h3>
+          <p>Prueba cambiar el filtro o ampliar la búsqueda.</p>
+        </div>
+
+        <!-- Filas -->
+        <ng-container *ngFor="let s of solicitudesFiltradas">
+
+          <article class="solicitud-row emp-solicitud-row">
+            <span class="solicitud-row__radicado">{{ s.radicado }}</span>
+
+            <div class="solicitud-row__beneficio">
+              <span class="title">{{ s.egresado }}</span>
+              <span class="categoria">{{ s.beneficio }}</span>
+            </div>
+
+            <span class="emp-sol__programa">{{ s.programa }}</span>
+
+            <span [class]="badgeCls(s.estado)">
+              <mat-icon style="font-size:12px;height:12px;width:12px">{{ badgeIcon(s.estado) }}</mat-icon>
+              {{ badgeLabel(s.estado) }}
+            </span>
+
+            <span class="solicitud-row__fecha">{{ s.actualizada }}</span>
+
+            <!-- Acciones: solo si puede responder -->
+            <div class="solicitud-row__actions" *ngIf="puedeResponder(s); else sinAcciones">
+              <button
+                class="row-action row-action--success"
+                type="button"
+                title="Aprobar solicitud"
+                [class.is-active]="respuestaPanel?.radicado === s.radicado && respuestaPanel?.accion === 'aprobar'"
+                (click)="abrirRespuesta(s.radicado, 'aprobar')"
+              >
+                <mat-icon style="font-size:16px;height:16px;width:16px">check</mat-icon>
+              </button>
+              <button
+                class="row-action row-action--info"
+                type="button"
+                title="Requiere información"
+                [class.is-active]="respuestaPanel?.radicado === s.radicado && respuestaPanel?.accion === 'info'"
+                (click)="abrirRespuesta(s.radicado, 'info')"
+              >
+                <mat-icon style="font-size:16px;height:16px;width:16px">info</mat-icon>
+              </button>
+              <button
+                class="row-action row-action--danger"
+                type="button"
+                title="Rechazar solicitud"
+                [class.is-active]="respuestaPanel?.radicado === s.radicado && respuestaPanel?.accion === 'rechazar'"
+                (click)="abrirRespuesta(s.radicado, 'rechazar')"
+              >
+                <mat-icon style="font-size:16px;height:16px;width:16px">close</mat-icon>
+              </button>
+            </div>
+            <ng-template #sinAcciones>
+              <div class="solicitud-row__actions">
+                <span *ngIf="s.nota" class="emp-sol__nota-icon" [title]="s.nota">
+                  <mat-icon style="font-size:16px;height:16px;width:16px;color:var(--fg-3)">comment</mat-icon>
+                </span>
+              </div>
+            </ng-template>
+          </article>
+
+          <!-- Panel de respuesta inline -->
+          <div
+            *ngIf="respuestaPanel?.radicado === s.radicado"
+            class="resp-panel"
+            [class.resp-panel--aprobar]="respuestaPanel?.accion === 'aprobar'"
+            [class.resp-panel--rechazar]="respuestaPanel?.accion === 'rechazar'"
+            [class.resp-panel--info]="respuestaPanel?.accion === 'info'"
+          >
+            <div class="resp-panel__body">
+              <div class="resp-panel__meta">
+                <mat-icon>{{ respuestaPanel?.accion === 'aprobar' ? 'check_circle' : respuestaPanel?.accion === 'rechazar' ? 'cancel' : 'info' }}</mat-icon>
+                <span>
+                  <strong>
+                    {{ respuestaPanel?.accion === 'aprobar' ? 'Aprobar solicitud' : respuestaPanel?.accion === 'rechazar' ? 'Rechazar solicitud' : 'Requiere información' }}
+                  </strong>
+                  · {{ s.egresado }} · {{ s.radicado }}
+                </span>
+              </div>
+
+              <div class="resp-panel__field">
+                <label class="field-label">
+                  {{ respuestaPanel?.accion === 'aprobar'
+                     ? 'Nota para el egresado (opcional)'
+                     : respuestaPanel?.accion === 'rechazar'
+                     ? 'Motivo del rechazo (recomendado)'
+                     : 'Información requerida al egresado *' }}
+                </label>
+                <textarea
+                  class="resp-panel__textarea"
+                  [(ngModel)]="respuestaPanel!.nota"
+                  [name]="'nota-' + s.radicado"
+                  rows="3"
+                  [placeholder]="respuestaPanel?.accion === 'aprobar'
+                    ? 'Ej. Código de descuento enviado a tu correo institucional…'
+                    : respuestaPanel?.accion === 'rechazar'
+                    ? 'Ej. Cupos no disponibles para el programa seleccionado en este periodo…'
+                    : 'Ej. Por favor adjunta tu certificado de grado actualizado…'"
+                ></textarea>
+              </div>
+
+              <div class="resp-panel__actions">
+                <button type="button" class="btn btn--ghost" style="width:auto;padding:0 16px;height:36px;font-size:13px" (click)="cancelarRespuesta()">
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  style="width:auto;padding:0 16px;height:36px;font-size:13px"
+                  [class.btn--primary]="respuestaPanel?.accion === 'aprobar'"
+                  [class.btn--danger]="respuestaPanel?.accion === 'rechazar'"
+                  [class.btn--secondary]="respuestaPanel?.accion === 'info'"
+                  (click)="confirmarRespuesta()"
+                >
+                  <mat-icon style="font-size:16px;height:16px;width:16px">{{ respuestaPanel?.accion === 'aprobar' ? 'check' : respuestaPanel?.accion === 'rechazar' ? 'close' : 'send' }}</mat-icon>
+                  {{ respuestaPanel?.accion === 'aprobar' ? 'Confirmar aprobación' : respuestaPanel?.accion === 'rechazar' ? 'Confirmar rechazo' : 'Enviar solicitud de info' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </ng-container>
+      </div><!-- /solicitudes__list -->
+
+    </section><!-- /solicitudes -->
+
+    <!-- Habeas Data -->
+    <aside class="data-notice" role="note">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>Privacidad de los egresados.</strong>
+        Solo accedes a los datos mínimos necesarios (nombre, programa, correo institucional)
+        conforme a la <a class="link" href="#habeas-data">Ley 1581/2012</a>.
+        Cada respuesta queda registrada en bitácora institucional.
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · OATI
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+    </nav>
+  </footer>
+
+</div>
