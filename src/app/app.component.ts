@@ -18,7 +18,10 @@ export class AppComponent {
     this.autenticacion.user$.subscribe((data: any) => {
       const { user, userService } = data;
       if (user && userService) {
-        this.router.navigateByUrl('catalogo');
+        const roles: string[] = userService?.role ?? user?.role ?? [];
+        this.router.navigateByUrl(
+          roles.includes('empresa') ? 'empresa/dashboard' : 'catalogo'
+        );
       }
     });
   }

@@ -342,7 +342,7 @@
 /* ── Columnas de la tabla (6 col) ────────────────────────── */
 .emp-solicitud-head,
 .emp-solicitud-row {
-  grid-template-columns: 155px 1fr 160px 140px 110px 100px;
+  grid-template-columns: 155px 1fr 160px 140px 110px 140px;
 }
 
 .emp-sol__programa {
@@ -460,28 +460,6 @@
   display: flex;
   gap: var(--space-2);
   justify-content: flex-end;
-}
-
-/* btn--danger y btn--secondary no existen en styles global, los definimos aquí */
-.btn--danger {
-  background: var(--danger-accent);
-  color: #fff;
-  border-color: var(--danger-accent);
-
-  &:hover:not(:disabled) {
-    background: var(--danger-base);
-    border-color: var(--danger-base);
-  }
-}
-
-.btn--secondary {
-  background: var(--primary-50);
-  color: var(--primary-700);
-  border-color: var(--primary-200);
-
-  &:hover:not(:disabled) {
-    background: var(--primary-100);
-  }
 }
 
 /* ── Contador en chip de filtro ─────────────────────────── */

@@ -6,6 +6,12 @@
 export const environment = {
   production: false,
 
+  // ─── DEMO ────────────────────────────────────────────────────────────────────
+  // Quitar (o poner false) cuando se integre el login real con WSO2.
+  DEMO_MODE: true,
+  DEMO_ROL: 'egresado' as 'empresa' | 'egresado',
+  // ─────────────────────────────────────────────────────────────────────────────
+
   TOKEN: {
     AUTORIZATION_URL: 'https://autenticacion.portaloas.udistrital.edu.co/oauth2/authorize',
     // ← Reemplazar con el Client ID que entregue OATI para este proyecto.
@@ -24,7 +30,16 @@ export const environment = {
   DATOS_IDENTIFICACION_TERCERO_ENDPOINT: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/terceros_crud/v1/datos_identificacion',
   TERCEROS_SERVICE: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/terceros_crud/v1',
 
-  // URLs de los servicios MID de Beneficios (pendientes — OATI las entrega)
-  BENEFICIOS_MID: '',
-  EMPRESAS_MID: '',
+  // Servicios para el perfil académico del egresado (C-2a)
+  SGA_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/sga_mid/v1',
+  PROYECTO_ACADEMICO_SERVICE: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/proyecto_academico_crud/v1',
+
+  // MID de Beneficios Egresados. En local corre en :8081 (conf/app.conf del MID);
+  // en despliegue OATI lo expone tras el gateway /apioas/ (ver environment.prod.ts).
+  BENEFICIOS_MID: 'http://localhost:8081/v1',
+
+  // Roles de WSO2 que habilitan cada vista. En DEMO_MODE el rol es DEMO_ROL.
+  // ← Confirmar con OATI los nombres reales de los roles (D-5/D-7) y ampliar aquí.
+  ROLES_EGRESADO: ['egresado', 'EGRESADO'],
+  ROLES_EMPRESA: ['empresa', 'EMPRESA'],
 };

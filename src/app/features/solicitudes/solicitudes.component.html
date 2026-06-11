@@ -6,7 +6,7 @@
   <!-- ── Header ─────────────────────────────────────────────── -->
   <header class="dash-header">
     <div class="dash-header__brand">
-      <img src="assets/images/logo-ud.png" alt="UD" />
+      <img src="assets/images/logo-ud-circular.png" alt="UD" />
       <div class="dash-header__brand-text">
         <span class="product">Beneficios UD</span>
         <span class="org">Portal de Egresados · OATI</span>
@@ -28,7 +28,10 @@
           (click)="toggleMenu()"
           (blur)="closeMenu()"
         >
-          <span class="avatar">{{ usuario.iniciales }}</span>
+          <span class="avatar">
+            <img *ngIf="usuario.fotoUrl" [src]="usuario.fotoUrl" alt="" />
+            <ng-container *ngIf="!usuario.fotoUrl">{{ usuario.iniciales }}</ng-container>
+          </span>
           <span class="user-menu__name">
             <span class="line1">{{ usuario.primerNombre }}</span>
             <span class="line2">{{ usuario.rol }}</span>
@@ -37,9 +40,14 @@
         </button>
         <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
           <div class="user-menu__pop-head">
+            <span class="avatar avatar--lg" aria-hidden="true">
+              <img *ngIf="usuario.fotoUrl" [src]="usuario.fotoUrl" alt="" />
+              <ng-container *ngIf="!usuario.fotoUrl">{{ usuario.iniciales }}</ng-container>
+            </span>
             <strong>{{ usuario.nombre }}</strong>
             <span>{{ usuario.email }}</span>
-            <span *ngIf="usuario.documento" class="muted">Doc: {{ usuario.documento }}</span>
+            <span *ngIf="usuario.codigo" class="muted">Código: {{ usuario.codigo }}</span>
+            <span *ngIf="usuario.programa" class="muted">{{ usuario.programa }}</span>
           </div>
           <a class="user-menu__item" href="#perfil"><mat-icon>person</mat-icon>Mi perfil</a>
           <div class="user-menu__sep"></div>
@@ -159,8 +167,9 @@
           <span class="sol-row__fecha">{{ s.actualizada }}</span>
 
           <div class="sol-row__actions">
-            <button class="row-action" type="button" title="Ver detalle">
-              <mat-icon style="font-size:16px;height:16px;width:16px">open_in_new</mat-icon>
+            <button class="row-action" type="button" title="Ver detalle"
+                    (click)="abrirDetalle(s)">
+              <mat-icon style="font-size:16px;height:16px;width:16px">visibility</mat-icon>
             </button>
             <button
               *ngIf="puedeCancel(s)"
@@ -207,5 +216,112 @@
       <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
     </nav>
   </footer>
+
+  <!-- ── Drawer de detalle de solicitud ─────────────────────── -->
+  <ng-container *ngIf="drawer as d">
+    <div class="drawer-overlay" (click)="cerrarDetalle()"></div>
+    <aside class="drawer" role="dialog" aria-modal="true" [attr.aria-label]="'Detalle de la solicitud ' + d.radicado">
+
+      <!-- Cabecera -->
+      <header class="drawer__head">
+        <div class="drawer__head-text">
+          <span class="drawer__radicado">{{ d.radicado }}</span>
+          <span [class]="badgeCls(d.estado)">
+            <mat-icon style="font-size:12px;height:12px;width:12px">{{ badgeIcon(d.estado) }}</mat-icon>
+            {{ badgeLabel(d.estado) }}
+          </span>
+        </div>
+        <button class="drawer__close" type="button" aria-label="Cerrar detalle" (click)="cerrarDetalle()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <div class="drawer__body">
+
+        <!-- Beneficio -->
+        <section class="drawer__section">
+          <h3 class="drawer__section-title">Beneficio</h3>
+          <p class="drawer__beneficio">{{ d.beneficio }}</p>
+          <span class="drawer__muted">
+            {{ d.empresa }} · {{ d.categoria }}
+          </span>
+          <span class="drawer__muted">
+            Solicitada el {{ d.fechaSolicitud }} · última actualización {{ d.actualizada }}
+          </span>
+        </section>
+
+        <!-- Aviso cuando la empresa espera respuesta -->
+        <div *ngIf="d.estado === 'info'" class="drawer__datos">
+          La empresa necesita información adicional para continuar con tu solicitud.
+          Revisa los mensajes abajo y responde lo antes posible.
+        </div>
+
+        <!-- Historial de estados (RN-004 / C-4b) -->
+        <section class="drawer__section">
+          <h3 class="drawer__section-title">Historial de la solicitud</h3>
+          <ol class="timeline">
+            <li *ngFor="let h of historialDrawer" class="timeline__item">
+              <span class="timeline__dot" [class]="'timeline__dot timeline__dot--' + (ESTADOS[h.estadoNuevo].cls)"></span>
+              <div class="timeline__content">
+                <div class="timeline__head">
+                  <strong>{{ ESTADOS[h.estadoNuevo].label }}</strong>
+                  <span class="drawer__muted">{{ h.fecha }}</span>
+                </div>
+                <span class="timeline__actor">
+                  {{ h.actor === 'empresa' ? 'Por la empresa' : 'Por ti' }}
+                  <ng-container *ngIf="h.estadoAnterior"> · desde {{ ESTADOS[h.estadoAnterior].label }}</ng-container>
+                </span>
+                <p *ngIf="h.justificacion" class="timeline__just">{{ h.justificacion }}</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- Hilo de mensajes con la empresa (RF-007) -->
+        <section *ngIf="puedeMensajear || mensajesDrawer.length > 0" class="drawer__section">
+          <h3 class="drawer__section-title">Mensajes con {{ d.empresa }}</h3>
+
+          <div class="hilo">
+            <div *ngFor="let m of mensajesDrawer"
+                 class="hilo__msg"
+                 [class.hilo__msg--propio]="m.autor === 'egresado'">
+              <div class="hilo__meta">{{ m.autor === 'egresado' ? 'Tú' : m.nombre }} · {{ m.fecha }}</div>
+              <div class="hilo__burbuja">{{ m.mensaje }}</div>
+            </div>
+            <p *ngIf="mensajesDrawer.length === 0" class="drawer__muted">Aún no hay mensajes.</p>
+          </div>
+
+          <div *ngIf="puedeMensajear" class="hilo__compose">
+            <textarea
+              rows="2"
+              placeholder="Responde a la empresa…"
+              [(ngModel)]="nuevoMensaje"
+              name="nuevoMensaje"></textarea>
+            <button class="btn btn--secondary hilo__send" type="button"
+                    [disabled]="!nuevoMensaje.trim()"
+                    (click)="enviarMensaje()">
+              <mat-icon style="font-size:16px;height:16px;width:16px">send</mat-icon>
+              Enviar
+            </button>
+          </div>
+          <p *ngIf="!puedeMensajear && mensajesDrawer.length > 0" class="drawer__muted">
+            El hilo está cerrado: la solicitud ya no está en «Requiere información».
+          </p>
+        </section>
+
+      </div><!-- /drawer__body -->
+
+      <!-- Acciones del egresado -->
+      <footer *ngIf="puedeCancel(d)" class="drawer__foot">
+        <button class="btn btn--ghost" type="button"
+                style="width:auto;padding:0 16px;height:36px;font-size:13px;align-self:flex-end"
+                (click)="cancelarSolicitud(d.radicado)">
+          <mat-icon style="font-size:16px;height:16px;width:16px">close</mat-icon>
+          Cancelar solicitud
+        </button>
+      </footer>
+
+    </aside>
+  </ng-container>
 
 </div>

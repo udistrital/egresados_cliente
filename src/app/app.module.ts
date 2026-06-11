@@ -3,7 +3,10 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+
+/* Core */
+import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 
 /* Angular Material */
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +20,11 @@ import { AppComponent } from './app.component';
 import { LoginComponent } from './features/login/login.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { CatalogoComponent } from './features/catalogo/catalogo.component';
+import { BeneficioDetalleComponent } from './features/beneficio-detalle/beneficio-detalle.component';
 import { SolicitudesComponent } from './features/solicitudes/solicitudes.component';
+
+/* Shared */
+import { SolicitudModalComponent } from './shared/solicitud-modal/solicitud-modal.component';
 
 /* Feature components — empresa */
 import { EmpresaRegistroComponent } from './features/empresa-registro/empresa-registro.component';
@@ -30,7 +37,9 @@ import { EmpresaBeneficiosComponent } from './features/empresa-beneficios/empres
     LoginComponent,
     DashboardComponent,
     CatalogoComponent,
+    BeneficioDetalleComponent,
     SolicitudesComponent,
+    SolicitudModalComponent,
     EmpresaRegistroComponent,
     EmpresaDashboardComponent,
     EmpresaBeneficiosComponent,
@@ -46,6 +55,7 @@ import { EmpresaBeneficiosComponent } from './features/empresa-beneficios/empres
   ],
   providers: [
     { provide: LocationStrategy, useClass: HashLocationStrategy },
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
   ],
   bootstrap: [AppComponent],
 })

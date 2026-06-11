@@ -41,6 +41,25 @@ export class ImplicitAutenticationService {
   init(entorno: any): any {
     this.environment = entorno;
 
+    if (environment.DEMO_MODE) {
+      const isEmpresa = environment.DEMO_ROL === 'empresa';
+      this.userSubject.next({
+        user: {
+          email: isEmpresa ? 'demo.empresa@aliada.co' : 'demo.egresado@udistrital.edu.co',
+          role: [environment.DEMO_ROL],
+        },
+        userService: {
+          nombre: isEmpresa ? 'TechCorp S.A.S.' : 'María Martínez',
+          PrimerNombre: isEmpresa ? 'TechCorp' : 'María',
+          PrimerApellido: isEmpresa ? 'S.A.S.' : 'Martínez',
+          email: isEmpresa ? 'demo.empresa@aliada.co' : 'mmartinez@udistrital.edu.co',
+          documento: isEmpresa ? '900123456' : '1026287543',
+          role: [environment.DEMO_ROL],
+        },
+      });
+      return;
+    }
+
     if (window.localStorage.getItem('id_token') === null) {
       const params: any = {};
       const queryString = location.hash.substring(1);
@@ -51,26 +70,37 @@ export class ImplicitAutenticationService {
       }
 
       if (!!params['id_token']) {
-        const id_token_array = (params['id_token']).split('.');
-        const payload = JSON.parse(atob(id_token_array[1]));
-        window.localStorage.setItem('access_token', params['access_token']);
-        window.localStorage.setItem('expires_in', params['expires_in']);
-        window.localStorage.setItem('state', params['state']);
-        window.localStorage.setItem('id_token', params['id_token']);
-        this.httpOptions = {
-          headers: new HttpHeaders({
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${params['access_token']}`,
-          }),
-        };
-        this.updateAuth(payload);
+        try {
+          const id_token_array = (params['id_token']).split('.');
+          const payload = JSON.parse(atob(id_token_array[1]));
+          window.localStorage.setItem('access_token', params['access_token']);
+          window.localStorage.setItem('expires_in', params['expires_in']);
+          window.localStorage.setItem('state', params['state']);
+          window.localStorage.setItem('id_token', params['id_token']);
+          this.httpOptions = {
+            headers: new HttpHeaders({
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${params['access_token']}`,
+            }),
+          };
+          this.updateAuth(payload);
+        } catch {
+          // id_token ilegible en el hash: descartar y dejar la sesión limpia
+          this.clearStorage();
+        }
       } else {
         this.clearStorage();
       }
     } else {
-      const id_token = window.localStorage.getItem('id_token')!.split('.');
-      const payload = JSON.parse(atob(id_token[1]));
-      this.updateAuth(payload);
+      try {
+        const id_token = window.localStorage.getItem('id_token')!.split('.');
+        const payload = JSON.parse(atob(id_token[1]));
+        this.updateAuth(payload);
+      } catch {
+        // Token corrupto/truncado de sesiones anteriores: si no se descarta,
+        // el constructor revienta y la app entera deja de responder.
+        this.clearStorage();
+      }
     }
 
     const expires = this.setExpiresAt();
@@ -104,7 +134,12 @@ export class ImplicitAutenticationService {
             localStorage.setItem('user', btoa(JSON.stringify({ ...{ user: payload }, ...{ userService: res } })));
             this.userSubject.next({ ...{ user: payload }, ...{ userService: res } });
           },
-          (error) => console.log(error),
+          (error) => {
+            // Sin userRol no hay documento/roles, pero el payload del id_token
+            // alcanza para mostrar email y no dejar la UI en "Cargando…"
+            console.warn('[auth] token/userRol falló — usando solo el payload del id_token', error);
+            this.userSubject.next({ user: payload });
+          },
         );
     }
   }

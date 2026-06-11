@@ -1,22 +1,15 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
-  Solicitud, EstadoSolicitud,
-  ESTADOS, SOLICITUDES_DEMO,
+  Solicitud, EstadoSolicitud, HistorialEntrada, MensajeHilo,
+  ESTADOS,
 } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
+import { SolicitudesService } from '../../core/services/solicitudes.service';
+import { UsuarioSesion, UsuarioSesionService } from '../../core/services/usuario-sesion.service';
 
 type FiltroEstado = 'todas' | 'activas' | 'aprobadas' | 'rechazadas' | 'canceladas';
-
-interface UsuarioMenu {
-  iniciales: string;
-  primerNombre: string;
-  rol: string;
-  nombre: string;
-  email: string;
-  documento: string;
-}
 
 @Component({
   selector: 'app-solicitudes',
@@ -25,19 +18,19 @@ interface UsuarioMenu {
 })
 export class SolicitudesComponent implements OnInit, OnDestroy {
 
-  usuario: UsuarioMenu = {
-    iniciales: '…',
-    primerNombre: 'Cargando…',
-    rol: '',
-    nombre: '',
-    email: '',
-    documento: '',
-  };
+  usuario: UsuarioSesion = this.sesionSvc.sesion;
 
-  solicitudes: Solicitud[] = SOLICITUDES_DEMO;
+  solicitudes: Solicitud[] = [];
   filtro: FiltroEstado = 'todas';
   query = '';
   menuOpen = false;
+
+  /** Solicitud abierta en el drawer de detalle (null = cerrado) */
+  drawer: Solicitud | null = null;
+  nuevoMensaje = '';
+  /** Bitácora y mensajes del drawer (se cargan al abrirlo) */
+  private historialCache: HistorialEntrada[] = [];
+  private mensajesCache: MensajeHilo[] = [];
 
   readonly FILTROS: { value: FiltroEstado; label: string; icon: string }[] = [
     { value: 'todas',      label: 'Todas',      icon: 'list' },
@@ -51,37 +44,20 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private autenticacion: ImplicitAutenticationService) {}
+  constructor(
+    private autenticacion: ImplicitAutenticationService,
+    private sesionSvc: UsuarioSesionService,
+    private solicitudesSvc: SolicitudesService,
+  ) {}
 
   ngOnInit(): void {
-    this.autenticacion.user$
+    this.solicitudesSvc.cargar()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((data: any) => {
-        const { user, userService } = data;
-        if (!user && !userService) return;
+      .subscribe(solicitudes => (this.solicitudes = solicitudes));
 
-        const primerNombre: string = userService?.PrimerNombre ?? userService?.nombre ?? '';
-        const primerApellido: string = userService?.PrimerApellido ?? userService?.apellido ?? '';
-        const nombreCompleto = primerNombre && primerApellido
-          ? `${primerNombre} ${primerApellido}`
-          : primerNombre || user?.email || userService?.email || '';
-        const email: string = userService?.email ?? userService?.Email ?? user?.email ?? '';
-        const documento: string = userService?.documento ?? userService?.Documento ?? '';
-        const tokens = nombreCompleto.trim().split(/\s+/);
-        const iniciales = tokens.length >= 2
-          ? (tokens[0][0] + tokens[1][0]).toUpperCase()
-          : (nombreCompleto[0] ?? email[0] ?? '?').toUpperCase();
-        const roles: string[] = userService?.role ?? user?.role ?? [];
-
-        this.usuario = {
-          iniciales,
-          primerNombre: primerNombre || email.split('@')[0],
-          nombre: nombreCompleto || email,
-          email,
-          documento,
-          rol: roles[0] ?? 'Egresado',
-        };
-      });
+    this.sesionSvc.sesion$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(sesion => (this.usuario = sesion));
   }
 
   ngOnDestroy(): void {
@@ -119,12 +95,72 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   setFiltro(f: FiltroEstado): void { this.filtro = f; }
 
   cancelarSolicitud(radicado: string): void {
-    this.solicitudes = this.solicitudes.map(s =>
-      s.radicado === radicado ? { ...s, estado: 'cancelada' as EstadoSolicitud } : s,
-    );
+    const solicitud = this.solicitudes.find(s => s.radicado === radicado);
+    if (!solicitud) return;
+    this.solicitudesSvc.cancelar(solicitud)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(solicitudes => {
+        this.solicitudes = solicitudes;
+        // Refrescar la referencia si el drawer muestra esta solicitud
+        if (this.drawer?.radicado === radicado) {
+          this.drawer = this.solicitudes.find(s => s.radicado === radicado) ?? null;
+          if (this.drawer) this.cargarDetalleDrawer(this.drawer);
+        }
+      });
   }
 
   puedeCancel(s: Solicitud): boolean { return s.estado === 'pendiente'; }
+
+  /* ── Drawer de detalle ───────────────────────────────────── */
+
+  abrirDetalle(s: Solicitud): void {
+    this.drawer = s;
+    this.nuevoMensaje = '';
+    this.cargarDetalleDrawer(s);
+  }
+
+  private cargarDetalleDrawer(s: Solicitud): void {
+    this.historialCache = [];
+    this.mensajesCache = [];
+    this.solicitudesSvc.getHistorial(s)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(historial => (this.historialCache = historial));
+    this.solicitudesSvc.getMensajes(s)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(mensajes => (this.mensajesCache = mensajes));
+  }
+
+  cerrarDetalle(): void { this.drawer = null; }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.drawer) this.cerrarDetalle();
+  }
+
+  get historialDrawer(): HistorialEntrada[] {
+    return this.drawer ? this.historialCache : [];
+  }
+
+  get mensajesDrawer(): MensajeHilo[] {
+    return this.drawer ? this.mensajesCache : [];
+  }
+
+  /** Solo se puede conversar mientras la solicitud está en REQUIERE_INFO (regla del MID) */
+  get puedeMensajear(): boolean {
+    return this.drawer?.estado === 'info';
+  }
+
+  enviarMensaje(): void {
+    if (!this.drawer || !this.puedeMensajear) return;
+    const texto = this.nuevoMensaje.trim();
+    if (!texto) return;
+    this.solicitudesSvc.enviarMensaje(this.drawer, this.usuario.nombre, texto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(mensajes => {
+        this.mensajesCache = mensajes;
+        this.nuevoMensaje = '';
+      });
+  }
 
   toggleMenu(): void { this.menuOpen = !this.menuOpen; }
   closeMenu(): void { setTimeout(() => { this.menuOpen = false; }, 150); }

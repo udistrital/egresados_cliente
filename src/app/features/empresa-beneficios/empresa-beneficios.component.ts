@@ -7,17 +7,10 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
   Empresa, BeneficioEmpresa, CategoriaBeneficio,
-  CATEGORIA_COLORS, EMPRESA_DEMO, BENEFICIOS_EMPRESA_DEMO,
+  CATEGORIA_COLORS, EMPRESA_DEMO,
 } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
-
-interface FormBeneficio {
-  titulo: string;
-  categoria: CategoriaBeneficio | '';
-  cuposIniciales: number | null;
-  vigenciaHasta: string;
-  resumen: string;
-}
+import { EmpresaService, FormPublicarBeneficio } from '../../core/services/empresa.service';
 
 @Component({
   selector: 'app-empresa-beneficios',
@@ -27,10 +20,11 @@ interface FormBeneficio {
 export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 
   empresa: Empresa = EMPRESA_DEMO;
-  beneficios: BeneficioEmpresa[] = [...BENEFICIOS_EMPRESA_DEMO];
+  beneficios: BeneficioEmpresa[] = [];
 
   menuOpen = false;
   mostrarFormulario = false;
+  publicando = false;
 
   readonly CATEGORIA_COLORS = CATEGORIA_COLORS;
 
@@ -42,21 +36,23 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
     { value: 'Cultura',    label: 'Cultura' },
   ];
 
-  form: FormBeneficio = this.formVacio();
+  form: FormPublicarBeneficio = this.formVacio();
 
   private destroy$ = new Subject<void>();
-  private nextId = 100;
 
-  constructor(private autenticacion: ImplicitAutenticationService) {}
+  constructor(
+    private autenticacion: ImplicitAutenticationService,
+    private empresaSvc: EmpresaService,
+  ) {}
 
   ngOnInit(): void {
-    this.autenticacion.user$
+    this.empresaSvc.getEmpresa()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((data: any) => {
-        const { user, userService } = data;
-        if (!user && !userService) return;
-        /* En integración real se cargará la empresa desde el token/servicio */
-      });
+      .subscribe(empresa => (this.empresa = empresa));
+
+    this.empresaSvc.getBeneficiosEmpresa()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(beneficios => (this.beneficios = beneficios));
   }
 
   ngOnDestroy(): void {
@@ -76,7 +72,7 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
   }
 
   /* ── Publicar formulario ───────────────────────────────── */
-  private formVacio(): FormBeneficio {
+  private formVacio(): FormPublicarBeneficio {
     return { titulo: '', categoria: '', cuposIniciales: null, vigenciaHasta: '', resumen: '' };
   }
 
@@ -97,26 +93,19 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
   }
 
   publicar(): void {
-    if (!this.formValido || this.form.categoria === '') return;
-    const nuevo: BeneficioEmpresa = {
-      id: `b${this.nextId++}`,
-      titulo: this.form.titulo.trim(),
-      empresa: this.empresa.nombre,
-      isotipo: this.empresa.iniciales,
-      categoria: this.form.categoria as CategoriaBeneficio,
-      cuposIniciales: this.form.cuposIniciales!,
-      cuposRestantes: this.form.cuposIniciales!,
-      vigenciaHasta: this.form.vigenciaHasta,
-      publicado: 'Ahora',
-      destacado: false,
-      resumen: this.form.resumen.trim(),
-      estadoPublicacion: 'activo',
-      solicitudesRecibidas: 0,
-      solicitudesPendientes: 0,
-    };
-    this.beneficios = [nuevo, ...this.beneficios];
-    this.form = this.formVacio();
-    this.mostrarFormulario = false;
+    if (!this.formValido || this.form.categoria === '' || this.publicando) return;
+    this.publicando = true;
+    this.empresaSvc.publicar(this.form, this.empresa)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: beneficios => {
+          this.beneficios = beneficios;
+          this.form = this.formVacio();
+          this.mostrarFormulario = false;
+          this.publicando = false;
+        },
+        error: () => { this.publicando = false; },
+      });
   }
 
   /* ── Helpers de vista ──────────────────────────────────── */

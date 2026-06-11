@@ -1,26 +1,17 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import {
-  Beneficio,
-  CATEGORIA_COLORS, BENEFICIOS_DEMO,
-} from '../../shared/oati.types';
+import { Beneficio, CATEGORIA_COLORS } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
+import { BeneficiosService } from '../../core/services/beneficios.service';
+import { SolicitudesService } from '../../core/services/solicitudes.service';
+import { UsuarioSesion, UsuarioSesionService } from '../../core/services/usuario-sesion.service';
 
 interface Filtros {
   query: string;
   categoria: string;
   sort: 'recientes' | 'vencen' | 'cupos';
   soloConCupos: boolean;
-}
-
-interface UsuarioMenu {
-  iniciales: string;
-  primerNombre: string;
-  rol: string;
-  nombre: string;
-  email: string;
-  documento: string;
 }
 
 @Component({
@@ -31,17 +22,12 @@ interface UsuarioMenu {
 export class CatalogoComponent implements OnInit, OnDestroy {
   readonly PER_PAGE = 6;
 
-  usuario: UsuarioMenu = {
-    iniciales: '…',
-    primerNombre: 'Cargando…',
-    rol: '',
-    nombre: '',
-    email: '',
-    documento: '',
-  };
+  usuario: UsuarioSesion = this.sesionSvc.sesion;
 
-  beneficios: Beneficio[] = BENEFICIOS_DEMO;
+  beneficios: Beneficio[] = [];
   menuOpen = false;
+  /** Beneficio en proceso de solicitud (modal abierto) */
+  modalBeneficio?: Beneficio;
 
   private destroy$ = new Subject<void>();
 
@@ -71,48 +57,26 @@ export class CatalogoComponent implements OnInit, OnDestroy {
 
   readonly CATEGORIA_COLORS = CATEGORIA_COLORS;
 
-  constructor(private autenticacion: ImplicitAutenticationService) {}
+  constructor(
+    private autenticacion: ImplicitAutenticationService,
+    private sesionSvc: UsuarioSesionService,
+    private beneficiosSvc: BeneficiosService,
+    private solicitudesSvc: SolicitudesService,
+  ) {}
 
   ngOnInit(): void {
-    this.autenticacion.user$
+    this.sesionSvc.sesion$
       .pipe(takeUntil(this.destroy$))
-      .subscribe((data: any) => {
-        const { user, userService } = data;
-        if (!user && !userService) return;
+      .subscribe(sesion => (this.usuario = sesion));
 
-        // Construir nombre: intentar campos del mid (SGA pattern), caer al email
-        const primerNombre: string =
-          userService?.PrimerNombre ?? userService?.nombre ?? '';
-        const primerApellido: string =
-          userService?.PrimerApellido ?? userService?.apellido ?? '';
-        const nombreCompleto =
-          primerNombre && primerApellido
-            ? `${primerNombre} ${primerApellido}`
-            : primerNombre || user?.email || userService?.email || '';
+    this.beneficiosSvc.getCatalogo()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(beneficios => (this.beneficios = beneficios));
 
-        const email: string = userService?.email ?? userService?.Email ?? user?.email ?? '';
-        const documento: string = userService?.documento ?? userService?.Documento ?? '';
-
-        // Iniciales: primeras letras de los dos primeros tokens del nombre
-        const tokens = nombreCompleto.trim().split(/\s+/);
-        const iniciales =
-          tokens.length >= 2
-            ? (tokens[0][0] + tokens[1][0]).toUpperCase()
-            : (nombreCompleto[0] ?? email[0] ?? '?').toUpperCase();
-
-        // Rol para mostrar debajo del nombre
-        const roles: string[] = userService?.role ?? user?.role ?? [];
-        const rolLabel = roles.length > 0 ? roles[0] : 'Egresado';
-
-        this.usuario = {
-          iniciales,
-          primerNombre: primerNombre || email.split('@')[0],
-          nombre: nombreCompleto || email,
-          email,
-          documento,
-          rol: rolLabel,
-        };
-      });
+    // Precarga "mis solicitudes" para que yaSolicitado() (RN-007) sea síncrono
+    this.solicitudesSvc.cargar()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe();
   }
 
   ngOnDestroy(): void {
@@ -210,8 +174,23 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     return { background: c.bg, color: c.fg };
   }
 
+  /** RN-007: el egresado ya tiene una solicitud en curso para este beneficio */
+  yaSolicitado(b: Beneficio): boolean {
+    return this.solicitudesSvc.yaSolicitado(b.id);
+  }
+
   solicitar(b: Beneficio): void {
-    // En integración real: llamar al servicio MID y navegar a detalle
-    console.log('Solicitar:', b.titulo);
+    if (this.esAgotado(b) || this.yaSolicitado(b)) return;
+    this.modalBeneficio = b;
+  }
+
+  onModalCerrado(creada: boolean): void {
+    this.modalBeneficio = undefined;
+    // Tras crear una solicitud, refrescar catálogo y caché de solicitudes (cupos, RN-007)
+    if (creada) {
+      this.beneficiosSvc.getCatalogo()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(beneficios => (this.beneficios = beneficios));
+    }
   }
 }

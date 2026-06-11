@@ -1,21 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import {
-  Solicitud, EstadoSolicitud,
-  ESTADOS, SOLICITUDES_DEMO, BENEFICIOS_DEMO, Beneficio,
-} from '../../shared/oati.types';
+import { Solicitud, EstadoSolicitud, ESTADOS, Beneficio } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
-
-interface UsuarioMenu {
-  iniciales: string;
-  primerNombre: string;
-  saludo: string;
-  rol: string;
-  nombre: string;
-  email: string;
-  documento: string;
-}
+import { BeneficiosService } from '../../core/services/beneficios.service';
+import { SolicitudesService } from '../../core/services/solicitudes.service';
+import { UsuarioSesion, UsuarioSesionService } from '../../core/services/usuario-sesion.service';
 
 interface Banner {
   tipo: 'atencion' | 'proceso' | 'ok' | 'vacio';
@@ -31,65 +21,41 @@ interface Banner {
   styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  readonly LIMITE_ACTIVAS = 5;
-  readonly BENEFICIOS_NOVEDAD = BENEFICIOS_DEMO.slice(0, 3);
+  readonly LIMITE_ACTIVAS = this.solicitudesSvc.LIMITE_ACTIVAS;
 
-  usuario: UsuarioMenu = {
-    iniciales: '…',
-    primerNombre: 'Cargando…',
-    saludo: 'Buenos días',
-    rol: '',
-    nombre: '',
-    email: '',
-    documento: '',
+  BENEFICIOS_NOVEDAD: Beneficio[] = [];
+
+  usuario: UsuarioSesion & { saludo: string } = {
+    ...this.sesionSvc.sesion,
+    saludo: this.buildSaludo(),
   };
 
-  solicitudes: Solicitud[] = SOLICITUDES_DEMO;
+  solicitudes: Solicitud[] = [];
   menuOpen = false;
 
   readonly ESTADOS = ESTADOS;
 
   private destroy$ = new Subject<void>();
 
-  constructor(private autenticacion: ImplicitAutenticationService) {}
+  constructor(
+    private autenticacion: ImplicitAutenticationService,
+    private sesionSvc: UsuarioSesionService,
+    private beneficiosSvc: BeneficiosService,
+    private solicitudesSvc: SolicitudesService,
+  ) {}
 
   ngOnInit(): void {
-    this.autenticacion.user$
+    this.sesionSvc.sesion$
       .pipe(takeUntil(this.destroy$))
-      .subscribe((data: any) => {
-        const { user, userService } = data;
-        if (!user && !userService) return;
+      .subscribe(sesion => (this.usuario = { ...sesion, saludo: this.buildSaludo() }));
 
-        const primerNombre: string =
-          userService?.PrimerNombre ?? userService?.nombre ?? '';
-        const primerApellido: string =
-          userService?.PrimerApellido ?? userService?.apellido ?? '';
-        const nombreCompleto =
-          primerNombre && primerApellido
-            ? `${primerNombre} ${primerApellido}`
-            : primerNombre || user?.email || userService?.email || '';
+    this.solicitudesSvc.cargar()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(solicitudes => (this.solicitudes = solicitudes));
 
-        const email: string =
-          userService?.email ?? userService?.Email ?? user?.email ?? '';
-        const documento: string =
-          userService?.documento ?? userService?.Documento ?? '';
-        const tokens = nombreCompleto.trim().split(/\s+/);
-        const iniciales =
-          tokens.length >= 2
-            ? (tokens[0][0] + tokens[1][0]).toUpperCase()
-            : (nombreCompleto[0] ?? email[0] ?? '?').toUpperCase();
-        const roles: string[] = userService?.role ?? user?.role ?? [];
-
-        this.usuario = {
-          iniciales,
-          primerNombre: primerNombre || email.split('@')[0],
-          saludo: this.buildSaludo(),
-          nombre: nombreCompleto || email,
-          email,
-          documento,
-          rol: roles[0] ?? 'Egresado',
-        };
-      });
+    this.beneficiosSvc.getCatalogo()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(beneficios => (this.BENEFICIOS_NOVEDAD = beneficios.slice(0, 3)));
   }
 
   ngOnDestroy(): void {

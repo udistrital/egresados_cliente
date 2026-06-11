@@ -123,6 +123,11 @@ export class LoginComponent implements OnInit {
 
   login(): void {
     this.loading = true;
+    // Forzar un flujo limpio: cualquier residuo de sesiones anteriores en
+    // localhost:4200 (sga_cliente, pruebas, tokens truncados) hace que
+    // login(false) retorne sin redirigir. Si WSO2 aún tiene sesión SSO
+    // activa, no volverá a pedir credenciales.
+    this.autenticacion.clearStorage();
     this.autenticacion.login(false);
   }
 

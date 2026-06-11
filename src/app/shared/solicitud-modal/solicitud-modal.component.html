@@ -1,0 +1,105 @@
+<!-- ============================================================
+     Modal de solicitud de beneficio · RF-003
+     confirmar → POST /v1/solicitudes (mid) → éxito con radicado
+     ============================================================ -->
+<div class="smodal-overlay" (click)="cerrar()">
+  <div class="smodal" role="dialog" aria-modal="true"
+       [attr.aria-label]="'Solicitar ' + beneficio.titulo"
+       (click)="$event.stopPropagation()">
+
+    <!-- ── Fase 1 · Confirmación ──────────────────────────────── -->
+    <ng-container *ngIf="fase === 'confirmar'">
+      <header class="smodal__head">
+        <span class="categoria-tag" [ngStyle]="categoriaStyle()">{{ beneficio.categoria }}</span>
+        <button class="smodal__close" type="button" aria-label="Cerrar" (click)="cerrar()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <h2 class="smodal__title">{{ beneficio.titulo }}</h2>
+      <div class="smodal__empresa">
+        <span class="smodal__mark" aria-hidden="true">{{ beneficio.empresa.charAt(0).toUpperCase() }}</span>
+        <strong>{{ beneficio.empresa }}</strong>
+        <span class="smodal__meta">
+          {{ beneficio.cuposRestantes }} cupos · vence {{ beneficio.vigenciaHasta }}
+        </span>
+      </div>
+
+      <!-- Condiciones: lo que el egresado acepta -->
+      <section *ngIf="detalle" class="smodal__condiciones">
+        <h3>
+          <mat-icon style="font-size:16px;height:16px;width:16px">gavel</mat-icon>
+          Condiciones del beneficio
+        </h3>
+        <p>{{ detalle.condiciones }}</p>
+      </section>
+
+      <!-- Datos complementarios (JSONB datos_complementarios en backend) -->
+      <label class="smodal__field">
+        <span>Información adicional para la empresa <em>(opcional)</em></span>
+        <textarea
+          rows="3"
+          maxlength="500"
+          placeholder="Ej.: horario de contacto preferido, sede de interés…"
+          [(ngModel)]="datosComplementarios"
+          name="datosComplementarios"></textarea>
+      </label>
+
+      <!-- Aceptación -->
+      <label class="smodal__acepta">
+        <input type="checkbox" [(ngModel)]="aceptaCondiciones" name="aceptaCondiciones" />
+        <span class="checkbox__box">
+          <mat-icon *ngIf="aceptaCondiciones"
+                    style="font-size:12px;height:12px;width:12px;line-height:12px;color:#fff">check</mat-icon>
+        </span>
+        He leído y acepto las condiciones del beneficio y el
+        <a class="link" href="#habeas-data" (click)="$event.stopPropagation()">tratamiento de mis datos (Ley 1581)</a>.
+      </label>
+
+      <!-- Error de reglas de negocio (RN-007 / RN-010 / cupos) -->
+      <div *ngIf="error" class="smodal__error" role="alert">
+        <mat-icon style="font-size:18px;height:18px;width:18px">error_outline</mat-icon>
+        {{ error }}
+      </div>
+
+      <footer class="smodal__foot">
+        <button class="btn btn--ghost" type="button" (click)="cerrar()">Cancelar</button>
+        <button class="btn btn--primary" type="button"
+                [disabled]="!aceptaCondiciones || enviando"
+                (click)="confirmar()">
+          {{ enviando ? 'Enviando…' : 'Confirmar solicitud' }}
+          <mat-icon *ngIf="!enviando" style="font-size:16px;height:16px;width:16px">arrow_forward</mat-icon>
+        </button>
+      </footer>
+    </ng-container>
+
+    <!-- ── Fase 2 · Éxito ─────────────────────────────────────── -->
+    <ng-container *ngIf="fase === 'exito'">
+      <div class="smodal__exito">
+        <span class="smodal__exito-icon">
+          <mat-icon>check_circle</mat-icon>
+        </span>
+        <h2 class="smodal__title">¡Solicitud radicada!</h2>
+        <p class="smodal__exito-sub">
+          Tu solicitud para <strong>{{ beneficio.titulo }}</strong> quedó en estado
+          <strong>Pendiente</strong>. La empresa la revisará y te notificaremos cualquier cambio.
+        </p>
+
+        <div class="smodal__radicado">
+          <span class="smodal__radicado-label">Número de radicado</span>
+          <code class="smodal__radicado-num">{{ radicado }}</code>
+          <span class="smodal__radicado-hint">Guárdalo: es tu comprobante de la solicitud.</span>
+        </div>
+
+        <footer class="smodal__foot smodal__foot--exito">
+          <button class="btn btn--ghost" type="button" (click)="cerrar()">Seguir explorando</button>
+          <a class="btn btn--primary" routerLink="/solicitudes">
+            Ver mis solicitudes
+            <mat-icon style="font-size:16px;height:16px;width:16px">arrow_forward</mat-icon>
+          </a>
+        </footer>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

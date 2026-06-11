@@ -6,7 +6,7 @@
   <!-- ── Header ─────────────────────────────────────────────── -->
   <header class="dash-header">
     <div class="dash-header__brand">
-      <img src="assets/images/logo-ud.png" alt="UD" />
+      <img src="assets/images/logo-ud-circular.png" alt="UD" />
       <div class="dash-header__brand-text">
         <span class="product">Beneficios UD</span>
         <span class="org">Portal de Egresados · OATI</span>
@@ -28,7 +28,10 @@
           (click)="toggleMenu()"
           (blur)="closeMenu()"
         >
-          <span class="avatar">{{ usuario.iniciales }}</span>
+          <span class="avatar">
+            <img *ngIf="usuario.fotoUrl" [src]="usuario.fotoUrl" alt="" />
+            <ng-container *ngIf="!usuario.fotoUrl">{{ usuario.iniciales }}</ng-container>
+          </span>
           <span class="user-menu__name">
             <span class="line1">{{ usuario.primerNombre }}</span>
             <span class="line2">{{ usuario.rol }}</span>
@@ -38,9 +41,14 @@
 
         <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
           <div class="user-menu__pop-head">
+            <span class="avatar avatar--lg" aria-hidden="true">
+              <img *ngIf="usuario.fotoUrl" [src]="usuario.fotoUrl" alt="" />
+              <ng-container *ngIf="!usuario.fotoUrl">{{ usuario.iniciales }}</ng-container>
+            </span>
             <strong>{{ usuario.nombre }}</strong>
             <span>{{ usuario.email }}</span>
-            <span *ngIf="usuario.documento" class="muted">Doc: {{ usuario.documento }}</span>
+            <span *ngIf="usuario.codigo" class="muted">Código: {{ usuario.codigo }}</span>
+            <span *ngIf="usuario.programa" class="muted">{{ usuario.programa }}</span>
           </div>
           <a class="user-menu__item" href="#perfil" role="menuitem">
             <mat-icon>person</mat-icon>Mi perfil

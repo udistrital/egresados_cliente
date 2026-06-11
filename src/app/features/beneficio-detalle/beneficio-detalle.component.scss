@@ -1,0 +1,132 @@
+/* ============================================================
+   Detalle de beneficio
+   ============================================================ */
+
+.bdet-main {
+  display: flex; flex-direction: column; gap: var(--space-5);
+}
+
+.bdet-breadcrumb {
+  .link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+}
+
+/* ─── Hero ───────────────────────────────────────────────── */
+.bdet-hero {
+  display: grid; grid-template-columns: 1fr 300px; gap: var(--space-6);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--space-6);
+
+  &.is-agotado .bdet-hero__main { opacity: 0.75; }
+
+  @media (max-width: 760px) { grid-template-columns: 1fr; }
+}
+
+.bdet-hero__main { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.bdet-hero__tags { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+.categoria-tag {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  border-radius: var(--radius-pill); font-size: 11px;
+  font-weight: var(--weight-bold); letter-spacing: 0.04em;
+}
+
+.bdet-hero__pill {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+  border-radius: var(--radius-pill); font-size: 10.5px; font-weight: var(--weight-bold);
+  letter-spacing: 0.05em; text-transform: uppercase;
+  background: rgba(222, 158, 15, 0.14); color: #7a4d00;
+
+  &--solicitado { background: rgba(20, 56, 115, 0.10); color: var(--primary-700); }
+}
+
+.bdet-hero__title {
+  margin: 0; font-size: 26px; font-weight: var(--weight-bold);
+  color: var(--fg-1); letter-spacing: -0.02em; line-height: 1.2; text-wrap: balance;
+}
+
+.bdet-hero__empresa {
+  display: flex; align-items: center; gap: var(--space-3); margin-top: auto;
+
+  strong { display: block; font-size: 14.5px; color: var(--fg-1); }
+}
+
+.bdet-hero__mark {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--primary-50); color: var(--primary-700);
+  font-weight: var(--weight-bold); font-size: 17px; flex-shrink: 0;
+}
+
+.bdet-hero__pub { font-size: 12.5px; color: var(--fg-3); }
+
+/* ─── Tarjeta CTA (cupos + vigencia + solicitar) ─────────── */
+.bdet-cta {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: var(--space-5);
+  align-self: start;
+}
+
+.bdet-cta__cupos-head {
+  display: flex; align-items: baseline; gap: 6px;
+
+  strong {
+    font-size: 26px; font-weight: var(--weight-bold); color: var(--success-accent);
+    &.is-agotado { color: var(--danger-accent); }
+  }
+  span { font-size: 13px; color: var(--fg-3); }
+}
+
+.bdet-cta__bar {
+  height: 6px; border-radius: var(--radius-pill);
+  background: var(--surface-3); overflow: hidden; margin-top: 6px;
+}
+
+.bdet-cta__bar-fill {
+  height: 100%; border-radius: var(--radius-pill);
+  background: var(--success-base); transition: width 0.25s ease;
+  &.is-agotado { background: var(--danger-base); }
+}
+
+.bdet-cta__vigencia {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--fg-2);
+}
+
+.bdet-cta__btn { width: 100%; }
+
+.bdet-cta__link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; align-self: center;
+}
+
+/* ─── Cuerpo: descripción + condiciones ──────────────────── */
+.bdet-body {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5);
+  @media (max-width: 860px) { grid-template-columns: 1fr; }
+}
+
+.bdet-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: var(--space-6);
+  display: flex; flex-direction: column; gap: var(--space-3);
+
+  h2 {
+    display: flex; align-items: center; gap: 8px; margin: 0;
+    font-size: 15px; font-weight: var(--weight-bold); color: var(--fg-1);
+  }
+  p { margin: 0; font-size: 14px; color: var(--fg-2); line-height: 1.65; }
+  .muted { color: var(--fg-3); }
+}
+
+.bdet-card--condiciones { background: var(--surface-2); }
+
+.bdet-card__note {
+  display: flex; align-items: flex-start; gap: 8px; margin-top: auto;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(20, 56, 115, 0.06); border-radius: var(--radius-md);
+  font-size: 12.5px; color: var(--fg-2); line-height: 1.5;
+
+  mat-icon { color: var(--primary-500); flex-shrink: 0; margin-top: 1px; }
+}

@@ -7,7 +7,7 @@
   <!-- ── Header empresa ────────────────────────────────────── -->
   <header class="dash-header">
     <div class="dash-header__brand">
-      <img src="assets/images/logo-ud.png" alt="UD" />
+      <img src="assets/images/logo-ud-circular.png" alt="UD" />
       <div class="dash-header__brand-text">
         <span class="product">Beneficios UD</span>
         <span class="org">Portal de Empresas · OATI</span>
@@ -205,6 +205,14 @@
             <!-- Acciones: solo si puede responder -->
             <div class="solicitud-row__actions" *ngIf="puedeResponder(s); else sinAcciones">
               <button
+                class="row-action"
+                type="button"
+                title="Ver detalle de la solicitud"
+                (click)="abrirDetalle(s)"
+              >
+                <mat-icon style="font-size:16px;height:16px;width:16px">visibility</mat-icon>
+              </button>
+              <button
                 class="row-action row-action--success"
                 type="button"
                 title="Aprobar solicitud"
@@ -237,6 +245,14 @@
                 <span *ngIf="s.nota" class="emp-sol__nota-icon" [title]="s.nota">
                   <mat-icon style="font-size:16px;height:16px;width:16px;color:var(--fg-3)">comment</mat-icon>
                 </span>
+                <button
+                  class="row-action"
+                  type="button"
+                  title="Ver detalle de la solicitud"
+                  (click)="abrirDetalle(s)"
+                >
+                  <mat-icon style="font-size:16px;height:16px;width:16px">visibility</mat-icon>
+                </button>
               </div>
             </ng-template>
           </article>
@@ -311,7 +327,7 @@
       <mat-icon>info</mat-icon>
       <div>
         <strong>Privacidad de los egresados.</strong>
-        Solo accedes a los datos mínimos necesarios (nombre, programa, correo institucional)
+        Solo accedes a los datos mínimos necesarios (nombre, programa, facultad, correo institucional)
         conforme a la <a class="link" href="#habeas-data">Ley 1581/2012</a>.
         Cada respuesta queda registrada en bitácora institucional.
       </div>
@@ -331,5 +347,178 @@
       <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
     </nav>
   </footer>
+
+  <!-- ── Drawer de detalle de solicitud ─────────────────────── -->
+  <ng-container *ngIf="drawer as d">
+    <div class="drawer-overlay" (click)="cerrarDetalle()"></div>
+    <aside class="drawer" role="dialog" aria-modal="true" [attr.aria-label]="'Detalle de la solicitud ' + d.radicado">
+
+      <!-- Cabecera -->
+      <header class="drawer__head">
+        <div class="drawer__head-text">
+          <span class="drawer__radicado">{{ d.radicado }}</span>
+          <span [class]="badgeCls(d.estado)">
+            <mat-icon style="font-size:12px;height:12px;width:12px">{{ badgeIcon(d.estado) }}</mat-icon>
+            {{ badgeLabel(d.estado) }}
+          </span>
+        </div>
+        <button class="drawer__close" type="button" aria-label="Cerrar detalle" (click)="cerrarDetalle()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </header>
+
+      <div class="drawer__body">
+
+        <!-- Beneficio -->
+        <section class="drawer__section">
+          <h3 class="drawer__section-title">Beneficio</h3>
+          <p class="drawer__beneficio">{{ d.beneficio }}</p>
+          <span class="drawer__muted">Solicitada el {{ d.fechaSolicitud }} · última actualización {{ d.actualizada }}</span>
+        </section>
+
+        <!-- Egresado (datos mínimos · RNF-002b) -->
+        <section class="drawer__section">
+          <h3 class="drawer__section-title">Egresado</h3>
+          <div class="drawer__egresado">
+            <span class="drawer__egresado-avatar" aria-hidden="true">{{ d.egresado.charAt(0).toUpperCase() }}</span>
+            <div>
+              <strong>{{ d.egresado }}</strong>
+              <span class="drawer__muted">{{ d.programa }}</span>
+              <span *ngIf="d.facultad" class="drawer__muted">{{ d.facultad }}</span>
+              <a *ngIf="d.email" class="link drawer__email" href="mailto:{{ d.email }}">{{ d.email }}</a>
+            </div>
+          </div>
+          <div class="drawer__pii-note">
+            <mat-icon style="font-size:14px;height:14px;width:14px">lock</mat-icon>
+            Datos mínimos conforme a la Ley 1581/2012 (RNF-002b).
+          </div>
+        </section>
+
+        <!-- Información adicional del egresado -->
+        <section class="drawer__section">
+          <h3 class="drawer__section-title">Información adicional del egresado</h3>
+          <p *ngIf="d.datosComplementarios" class="drawer__datos">{{ d.datosComplementarios }}</p>
+          <p *ngIf="!d.datosComplementarios" class="drawer__muted">El egresado no envió información adicional.</p>
+        </section>
+
+        <!-- Historial de estados (RN-004 / C-4b) -->
+        <section class="drawer__section">
+          <h3 class="drawer__section-title">Historial de la solicitud</h3>
+          <ol class="timeline">
+            <li *ngFor="let h of historialDrawer" class="timeline__item">
+              <span class="timeline__dot" [class]="'timeline__dot timeline__dot--' + (ESTADOS[h.estadoNuevo].cls)"></span>
+              <div class="timeline__content">
+                <div class="timeline__head">
+                  <strong>{{ ESTADOS[h.estadoNuevo].label }}</strong>
+                  <span class="drawer__muted">{{ h.fecha }}</span>
+                </div>
+                <span class="timeline__actor">
+                  {{ h.actor === 'empresa' ? 'Por la empresa' : 'Por el egresado' }}
+                  <ng-container *ngIf="h.estadoAnterior"> · desde {{ ESTADOS[h.estadoAnterior].label }}</ng-container>
+                </span>
+                <p *ngIf="h.justificacion" class="timeline__just">{{ h.justificacion }}</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- Hilo de mensajes (solo visible si hay conversación o está en REQUIERE_INFO) -->
+        <section *ngIf="puedeMensajear || mensajesDrawer.length > 0" class="drawer__section">
+          <h3 class="drawer__section-title">Mensajes con el egresado</h3>
+
+          <div class="hilo">
+            <div *ngFor="let m of mensajesDrawer"
+                 class="hilo__msg"
+                 [class.hilo__msg--propio]="m.autor === 'empresa'">
+              <div class="hilo__meta">{{ m.autor === 'empresa' ? 'Tú' : m.nombre }} · {{ m.fecha }}</div>
+              <div class="hilo__burbuja">{{ m.mensaje }}</div>
+            </div>
+            <p *ngIf="mensajesDrawer.length === 0" class="drawer__muted">Aún no hay mensajes.</p>
+          </div>
+
+          <div *ngIf="puedeMensajear" class="hilo__compose">
+            <textarea
+              rows="2"
+              placeholder="Escribe un mensaje al egresado…"
+              [(ngModel)]="nuevoMensaje"
+              name="nuevoMensaje"></textarea>
+            <button class="btn btn--secondary hilo__send" type="button"
+                    [disabled]="!nuevoMensaje.trim()"
+                    (click)="enviarMensaje()">
+              <mat-icon style="font-size:16px;height:16px;width:16px">send</mat-icon>
+              Enviar
+            </button>
+          </div>
+          <p *ngIf="!puedeMensajear && mensajesDrawer.length > 0" class="drawer__muted">
+            El hilo está cerrado: la solicitud ya no está en «Requiere información».
+          </p>
+        </section>
+
+      </div><!-- /drawer__body -->
+
+      <!-- Acciones de respuesta (RF-007) -->
+      <footer *ngIf="puedeResponder(d)" class="drawer__foot">
+        <div class="drawer__acciones" role="group" aria-label="Responder solicitud">
+          <button type="button" class="accion-chip accion-chip--success"
+                  [class.is-active]="drawerAccion === 'aprobar'"
+                  (click)="seleccionarAccion('aprobar')">
+            <mat-icon style="font-size:15px;height:15px;width:15px">check</mat-icon> Aprobar
+          </button>
+          <button type="button" class="accion-chip accion-chip--info"
+                  [class.is-active]="drawerAccion === 'info'"
+                  (click)="seleccionarAccion('info')">
+            <mat-icon style="font-size:15px;height:15px;width:15px">info</mat-icon> Pedir info
+          </button>
+          <button type="button" class="accion-chip accion-chip--danger"
+                  [class.is-active]="drawerAccion === 'rechazar'"
+                  (click)="seleccionarAccion('rechazar')">
+            <mat-icon style="font-size:15px;height:15px;width:15px">close</mat-icon> Rechazar
+          </button>
+        </div>
+
+        <div *ngIf="drawerAccion" class="drawer__respuesta">
+          <label class="field-label">
+            {{ drawerAccion === 'aprobar'
+               ? 'Nota para el egresado (opcional)'
+               : drawerAccion === 'rechazar'
+               ? 'Justificación del rechazo * (mínimo ' + JUSTIFICACION_MIN + ' caracteres, RN-003)'
+               : 'Información requerida al egresado *' }}
+          </label>
+          <textarea
+            class="resp-panel__textarea"
+            rows="3"
+            [(ngModel)]="drawerNota"
+            name="drawerNota"
+            [placeholder]="drawerAccion === 'aprobar'
+              ? 'Ej. Código de descuento enviado a tu correo institucional…'
+              : drawerAccion === 'rechazar'
+              ? 'Ej. Cupos no disponibles para el programa seleccionado en este periodo…'
+              : 'Ej. Por favor adjunta tu certificado de grado actualizado…'"></textarea>
+
+          <div *ngIf="drawerError" class="drawer__error" role="alert">
+            <mat-icon style="font-size:16px;height:16px;width:16px">error_outline</mat-icon>
+            {{ drawerError }}
+          </div>
+
+          <div class="drawer__respuesta-actions">
+            <button type="button" class="btn btn--ghost"
+                    style="width:auto;padding:0 16px;height:36px;font-size:13px"
+                    (click)="seleccionarAccion(drawerAccion)">
+              Cancelar
+            </button>
+            <button type="button" class="btn"
+                    style="width:auto;padding:0 16px;height:36px;font-size:13px"
+                    [class.btn--primary]="drawerAccion === 'aprobar'"
+                    [class.btn--danger]="drawerAccion === 'rechazar'"
+                    [class.btn--secondary]="drawerAccion === 'info'"
+                    (click)="confirmarDesdeDrawer()">
+              {{ drawerAccion === 'aprobar' ? 'Confirmar aprobación' : drawerAccion === 'rechazar' ? 'Confirmar rechazo' : 'Enviar solicitud de info' }}
+            </button>
+          </div>
+        </div>
+      </footer>
+
+    </aside>
+  </ng-container>
 
 </div>

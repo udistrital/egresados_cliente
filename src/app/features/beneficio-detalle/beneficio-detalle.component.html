@@ -1,0 +1,207 @@
+<!-- ============================================================
+     Detalle de beneficio · RF-003
+     En integración real: GET mid /v1/beneficios/:id
+     ============================================================ -->
+<div class="app dash">
+
+  <!-- ── Header autenticado ─────────────────────────────────── -->
+  <header class="dash-header">
+    <div class="dash-header__brand">
+      <img src="assets/images/logo-ud-circular.png" alt="UD" />
+      <div class="dash-header__brand-text">
+        <span class="product">Beneficios UD</span>
+        <span class="org">Portal de Egresados · OATI</span>
+      </div>
+    </div>
+
+    <nav class="dash-nav" aria-label="Navegación principal">
+      <a class="dash-nav__link" routerLink="/dashboard">Inicio</a>
+      <a class="dash-nav__link is-active" routerLink="/catalogo">Catálogo</a>
+      <a class="dash-nav__link" routerLink="/solicitudes">Mis solicitudes</a>
+    </nav>
+
+    <div class="dash-header__actions">
+      <div class="user-menu">
+        <button
+          class="user-menu__trigger"
+          type="button"
+          [attr.aria-expanded]="menuOpen"
+          (click)="toggleMenu()"
+          (blur)="closeMenu()"
+        >
+          <span class="avatar">
+            <img *ngIf="usuario.fotoUrl" [src]="usuario.fotoUrl" alt="" />
+            <ng-container *ngIf="!usuario.fotoUrl">{{ usuario.iniciales }}</ng-container>
+          </span>
+          <span class="user-menu__name">
+            <span class="line1">{{ usuario.primerNombre }}</span>
+            <span class="line2">{{ usuario.rol }}</span>
+          </span>
+          <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(90deg)">chevron_right</mat-icon>
+        </button>
+        <div *ngIf="menuOpen" class="user-menu__pop" role="menu">
+          <div class="user-menu__pop-head">
+            <span class="avatar avatar--lg" aria-hidden="true">
+              <img *ngIf="usuario.fotoUrl" [src]="usuario.fotoUrl" alt="" />
+              <ng-container *ngIf="!usuario.fotoUrl">{{ usuario.iniciales }}</ng-container>
+            </span>
+            <strong>{{ usuario.nombre }}</strong>
+            <span>{{ usuario.email }}</span>
+            <span *ngIf="usuario.codigo" class="muted">Código: {{ usuario.codigo }}</span>
+            <span *ngIf="usuario.programa" class="muted">{{ usuario.programa }}</span>
+          </div>
+          <a class="user-menu__item" href="#perfil"><mat-icon>person</mat-icon>Mi perfil</a>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item user-menu__item--danger" type="button" (click)="logout()">
+            <mat-icon>logout</mat-icon>Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Contenido principal ───────────────────────────────── -->
+  <main class="dash-main bdet-main">
+
+    <!-- Breadcrumb -->
+    <nav class="bdet-breadcrumb" aria-label="Miga de pan">
+      <a class="link" routerLink="/catalogo">
+        <mat-icon style="font-size:15px;height:15px;width:15px;transform:rotate(180deg)">arrow_forward</mat-icon>
+        Volver al catálogo
+      </a>
+    </nav>
+
+    <!-- Beneficio no encontrado -->
+    <div *ngIf="!beneficio" class="empty-state">
+      <mat-icon>search_off</mat-icon>
+      <h3>No encontramos este beneficio</h3>
+      <p>Puede que el enlace esté vencido o que el beneficio ya no esté publicado.</p>
+      <a class="btn btn--ghost" style="width:auto;padding-left:24px;padding-right:24px" routerLink="/catalogo">
+        Ir al catálogo
+      </a>
+    </div>
+
+    <ng-container *ngIf="beneficio">
+      <!-- ── Encabezado del beneficio ─────────────────────────── -->
+      <section class="bdet-hero" [class.is-agotado]="agotado">
+        <div class="bdet-hero__main">
+          <div class="bdet-hero__tags">
+            <span class="categoria-tag" [ngStyle]="categoriaStyle()">{{ beneficio.categoria }}</span>
+            <span *ngIf="beneficio.destacado" class="bdet-hero__pill">
+              <mat-icon style="font-size:12px;height:12px;width:12px">check_circle</mat-icon>
+              Destacado
+            </span>
+            <span *ngIf="yaSolicitado" class="bdet-hero__pill bdet-hero__pill--solicitado">
+              <mat-icon style="font-size:12px;height:12px;width:12px">how_to_reg</mat-icon>
+              Ya lo solicitaste
+            </span>
+          </div>
+
+          <h1 class="bdet-hero__title">{{ beneficio.titulo }}</h1>
+
+          <div class="bdet-hero__empresa">
+            <span class="bdet-hero__mark" aria-hidden="true">{{ beneficio.empresa.charAt(0).toUpperCase() }}</span>
+            <div>
+              <strong>{{ beneficio.empresa }}</strong>
+              <span class="bdet-hero__pub">Publicado {{ beneficio.publicado.toLowerCase() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta lateral: cupos + vigencia + CTA -->
+        <aside class="bdet-cta">
+          <div class="bdet-cta__cupos">
+            <div class="bdet-cta__cupos-head">
+              <strong [class.is-agotado]="agotado">{{ beneficio.cuposRestantes }}</strong>
+              <span>de {{ beneficio.cuposIniciales }} cupos</span>
+            </div>
+            <div class="bdet-cta__bar" aria-hidden="true">
+              <div class="bdet-cta__bar-fill" [class.is-agotado]="agotado" [style.width.%]="pctCupos"></div>
+            </div>
+          </div>
+
+          <div class="bdet-cta__vigencia">
+            <mat-icon style="font-size:15px;height:15px;width:15px">hourglass_empty</mat-icon>
+            Vence {{ beneficio.vigenciaHasta }}
+          </div>
+
+          <button
+            class="btn btn--primary bdet-cta__btn"
+            type="button"
+            [disabled]="agotado || yaSolicitado"
+            (click)="abrirModal()"
+          >
+            <ng-container *ngIf="!agotado && !yaSolicitado">
+              Solicitar este beneficio
+              <mat-icon style="font-size:16px;height:16px;width:16px">arrow_forward</mat-icon>
+            </ng-container>
+            <ng-container *ngIf="yaSolicitado">Ya solicitado</ng-container>
+            <ng-container *ngIf="agotado && !yaSolicitado">Sin cupos</ng-container>
+          </button>
+
+          <a *ngIf="yaSolicitado" class="link bdet-cta__link" routerLink="/solicitudes">
+            Ver el estado en Mis solicitudes
+            <mat-icon style="font-size:14px;height:14px;width:14px">arrow_forward</mat-icon>
+          </a>
+        </aside>
+      </section>
+
+      <!-- ── Descripción y condiciones ────────────────────────── -->
+      <section class="bdet-body">
+        <article class="bdet-card">
+          <h2>
+            <mat-icon style="font-size:18px;height:18px;width:18px">description</mat-icon>
+            ¿En qué consiste?
+          </h2>
+          <p>{{ detalle?.descripcion ?? beneficio.resumen }}</p>
+        </article>
+
+        <article class="bdet-card bdet-card--condiciones">
+          <h2>
+            <mat-icon style="font-size:18px;height:18px;width:18px">gavel</mat-icon>
+            Condiciones
+          </h2>
+          <p *ngIf="detalle">{{ detalle.condiciones }}</p>
+          <p *ngIf="!detalle" class="muted">La empresa no registró condiciones adicionales.</p>
+          <div class="bdet-card__note">
+            <mat-icon style="font-size:15px;height:15px;width:15px">info</mat-icon>
+            Al solicitar el beneficio aceptas estas condiciones. La empresa puede pedirte
+            información adicional antes de aprobar tu solicitud.
+          </div>
+        </article>
+      </section>
+
+      <!-- Habeas Data -->
+      <aside class="data-notice" role="note">
+        <mat-icon>info</mat-icon>
+        <div>
+          <strong>Tus datos están protegidos.</strong>
+          {{ beneficio.empresa }} sólo recibirá los datos mínimos necesarios para gestionar tu solicitud.
+          <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+        </div>
+      </aside>
+    </ng-container>
+
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer__copy">
+      © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · OATI
+    </div>
+    <nav class="footer__links">
+      <a href="#soporte">Soporte</a>
+      <a href="#terminos">Términos</a>
+      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+    </nav>
+  </footer>
+
+  <!-- ── Modal de solicitud ─────────────────────────────────── -->
+  <app-solicitud-modal
+    *ngIf="modalAbierto && beneficio"
+    [beneficio]="beneficio"
+    (cerrado)="onModalCerrado($event)"
+  />
+
+</div>
