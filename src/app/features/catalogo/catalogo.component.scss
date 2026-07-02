@@ -122,6 +122,11 @@
   user-select: none; color: var(--fg-2); font-size: 13px;
   font-family: var(--font-sans); white-space: nowrap;
   input { position: absolute; opacity: 0; pointer-events: none; }
+  // Estado marcado: caja azul con check blanco (sin esto, el check #fff quedaba
+  // blanco sobre blanco y el toggle parecía no hacer nada visualmente).
+  input:checked + .checkbox__box { background: var(--primary-500); border-color: var(--primary-500); }
+  input:focus-visible + .checkbox__box { box-shadow: var(--ring-primary); }
+  &:hover .checkbox__box { border-color: var(--primary-300); }
 }
 
 .checkbox__box {
@@ -243,4 +248,92 @@
 .pagination__info {
   font-size: 13px; color: var(--fg-3);
   strong { color: var(--fg-1); font-weight: var(--weight-bold); }
+}
+
+/* ─── Beneficios institucionales UD (por ser egresado) ────── */
+.inst-benef {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  border-top: 3px solid var(--primary-500);
+  display: flex; flex-direction: column; gap: var(--space-5);
+}
+
+.inst-benef__head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-4); flex-wrap: wrap;
+}
+
+.inst-benef__eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: var(--weight-bold); letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--primary-700);
+  margin-bottom: 6px;
+
+  mat-icon { color: var(--primary-500); }
+}
+
+.inst-benef__title {
+  margin: 0; font-size: 20px; font-weight: var(--weight-bold);
+  color: var(--fg-1); letter-spacing: -0.01em;
+}
+
+.inst-benef__sub {
+  margin: 6px 0 0; font-size: 13.5px; color: var(--fg-3);
+  line-height: 1.55; max-width: 64ch;
+}
+
+.inst-benef__portal {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border: 1px solid var(--border);
+  border-radius: var(--radius-pill); background: var(--surface);
+  font-size: 13px; font-weight: var(--weight-medium); color: var(--fg-1);
+  text-decoration: none; white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover { border-color: var(--primary-300); background: var(--primary-50); }
+}
+
+.inst-benef__grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3);
+
+  @media (max-width: 980px) { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.inst-card {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-4); height: 100%;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface-2); text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: var(--primary-300); background: var(--primary-50);
+    transform: translateY(-1px);
+
+    .inst-card__ext { opacity: 1; }
+  }
+}
+
+.inst-card__icon {
+  width: 38px; height: 38px; border-radius: var(--radius-md); flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(20, 56, 115, 0.08); color: var(--primary-700);
+
+  mat-icon { font-size: 20px; height: 20px; width: 20px; }
+}
+
+.inst-card__body {
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+
+  strong { font-size: 13.5px; color: var(--fg-1); }
+  span { font-size: 12.5px; color: var(--fg-3); line-height: 1.45; }
+}
+
+.inst-card__ext {
+  font-size: 14px; height: 14px; width: 14px; margin-left: auto; flex-shrink: 0;
+  color: var(--fg-3); opacity: 0; transition: opacity 0.15s ease;
 }

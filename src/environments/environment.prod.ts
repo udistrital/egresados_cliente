@@ -6,10 +6,6 @@
 export const environment = {
   production: true,
 
-  // En producción siempre se integra contra los servicios reales.
-  DEMO_MODE: false,
-  DEMO_ROL: 'egresado' as 'empresa' | 'egresado',
-
   TOKEN: {
     AUTORIZATION_URL: 'https://autenticacion.portaloas.udistrital.edu.co/oauth2/authorize',
     CLIENTE_ID: '', // ← CLIENTE_ID propio del módulo (D-6, lo entrega OATI)

@@ -119,7 +119,7 @@
           name="categoria"
           (ngModelChange)="onFiltrosChange()"
         >
-          <option *ngFor="let c of CATEGORIAS" [value]="c.value">{{ c.label }}</option>
+          <option *ngFor="let c of categorias" [value]="c.value">{{ c.label }}</option>
         </select>
       </div>
 
@@ -245,8 +245,9 @@
       </article>
     </section>
 
-    <!-- ── Paginación ─────────────────────────────────────────── -->
-    <nav *ngIf="totalPages > 1" class="pagination" aria-label="Paginación">
+    <!-- ── Paginación (fija mientras haya resultados: "1 de 1" con botones
+         deshabilitados en vez de aparecer/desaparecer y mover el layout) ──── -->
+    <nav *ngIf="paginados.length > 0" class="pagination" aria-label="Paginación">
       <button class="pagination__btn" type="button"
               [disabled]="page === 1" (click)="changePage(page - 1)">
         <mat-icon style="font-size:16px;height:16px;width:16px;transform:rotate(180deg)">chevron_right</mat-icon>
@@ -260,13 +261,50 @@
       </button>
     </nav>
 
+    <!-- ── Beneficios institucionales UD (por ser egresado) ──── -->
+    <section class="inst-benef" aria-labelledby="inst-benef-title">
+      <header class="inst-benef__head">
+        <div>
+          <div class="inst-benef__eyebrow">
+            <mat-icon style="font-size:14px;height:14px;width:14px">account_balance</mat-icon>
+            Universidad Distrital · Política de Egresados
+          </div>
+          <h2 id="inst-benef-title" class="inst-benef__title">Beneficios por ser egresado UD</h2>
+          <p class="inst-benef__sub">
+            Además del catálogo de empresas aliadas, la Universidad te ofrece estos
+            beneficios institucionales de por vida
+            (<a class="link" href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf"
+                target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>).
+          </p>
+        </div>
+        <a class="inst-benef__portal" href="https://egresados.udistrital.edu.co/servicios"
+           target="_blank" rel="noopener noreferrer">
+          Portal de egresados
+          <mat-icon style="font-size:14px;height:14px;width:14px">open_in_new</mat-icon>
+        </a>
+      </header>
+
+      <ul class="inst-benef__grid">
+        <li *ngFor="let bi of BENEFICIOS_UD">
+          <a class="inst-card" [href]="bi.url" target="_blank" rel="noopener noreferrer">
+            <span class="inst-card__icon"><mat-icon>{{ bi.icon }}</mat-icon></span>
+            <span class="inst-card__body">
+              <strong>{{ bi.titulo }}</strong>
+              <span>{{ bi.descripcion }}</span>
+            </span>
+            <mat-icon class="inst-card__ext">open_in_new</mat-icon>
+          </a>
+        </li>
+      </ul>
+    </section>
+
     <!-- Habeas Data -->
     <aside class="data-notice" role="note">
       <mat-icon>info</mat-icon>
       <div>
         <strong>Tus datos están protegidos.</strong>
         Las empresas aliadas sólo acceden a los datos mínimos necesarios para gestionar tu solicitud.
-        <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+        <a class="link" href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Ley 1581/2012 (Habeas Data)</a>.
       </div>
     </aside>
 
@@ -280,8 +318,8 @@
     <nav class="footer__links">
       <a href="#soporte">Soporte</a>
       <a href="#terminos">Términos</a>
-      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
-      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf" target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>
     </nav>
   </footer>
 

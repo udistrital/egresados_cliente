@@ -370,6 +370,10 @@ a:hover { color: var(--link-hover); }
   font-weight: var(--weight-bold);
   white-space: nowrap;
   letter-spacing: 0.01em;
+  // En celdas angostas (p. ej. la tabla de la bandeja) la pastilla no puede
+  // crecer: recortar DENTRO del fondo redondeado en vez de dejar salir el texto.
+  max-width: 100%;
+  overflow: hidden;
 
   &.estado-badge--aprobada  { background: rgba(85, 153, 61, 0.14); color: #2A6A1A; }
   &.estado-badge--rechazada { background: rgba(178, 34, 34, 0.10); color: var(--danger-accent); }
@@ -1066,5 +1070,41 @@ a:hover { color: var(--link-hover); }
   display: flex;
   gap: var(--space-2);
   justify-content: flex-end;
+}
+
+/* ─── Skeleton loading (compartido: bandeja empresa, mis solicitudes…) ── */
+/* Bloques fantasma con shimmer en la paleta del portal. Uso: filas con la
+   misma grilla de la tabla real + celdas .sk con el modificador de forma. */
+.sk {
+  display: block;
+  height: 13px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg,
+    var(--surface-3) 25%,
+    var(--primary-50, var(--surface-2)) 50%,
+    var(--surface-3) 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.3s ease-in-out infinite;
+}
+
+.sk--pill  { width: 82%;  height: 16px; }
+.sk--text  { width: 70%; }
+.sk--corto { width: 48px; }
+.sk--badge { width: 92px; height: 22px; }
+.sk--btn   { width: 110px; height: 30px; border-radius: var(--radius-md); }
+
+.sk-row { pointer-events: none; }
+.sk-row:nth-child(2) .sk { animation-delay: 0.15s; }
+.sk-row:nth-child(3) .sk { animation-delay: 0.3s; }
+
+@keyframes sk-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Texto solo para lectores de pantalla */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 

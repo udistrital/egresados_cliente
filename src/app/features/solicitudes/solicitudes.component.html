@@ -123,8 +123,30 @@
         </div>
       </div>
 
-      <!-- Resultado vacío -->
-      <div *ngIf="solicitudesFiltradas.length === 0" class="empty-state">
+      <!-- Cargando (JIT + fetch en vuelo): skeleton con la forma real de la
+           tabla — nunca mostrar "sin solicitudes" antes de tener respuesta -->
+      <div *ngIf="cargandoSolicitudes" class="sol-table" role="status" aria-live="polite">
+        <span class="sr-only">Cargando solicitudes…</span>
+        <div class="sol-table__head" aria-hidden="true">
+          <span>Radicado</span>
+          <span>Beneficio</span>
+          <span>Empresa</span>
+          <span>Estado</span>
+          <span>Actualizada</span>
+          <span></span>
+        </div>
+        <article class="sol-row sk-row" *ngFor="let i of [1, 2, 3]" aria-hidden="true">
+          <span class="sk sk--pill"></span>
+          <span class="sk sk--text"></span>
+          <span class="sk sk--text"></span>
+          <span class="sk sk--badge"></span>
+          <span class="sk sk--corto"></span>
+          <span></span>
+        </article>
+      </div>
+
+      <!-- Resultado vacío (solo cuando ya se consultó el backend) -->
+      <div *ngIf="!cargandoSolicitudes && solicitudesFiltradas.length === 0" class="empty-state">
         <mat-icon>inbox</mat-icon>
         <h3>Sin solicitudes con ese filtro</h3>
         <p>Prueba otro estado o explora el catálogo para crear tu primera solicitud.</p>
@@ -200,7 +222,7 @@
       <div>
         <strong>Tus datos están protegidos.</strong>
         Las empresas aliadas sólo acceden a los datos mínimos para gestionar tu solicitud.
-        <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+        <a class="link" href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Ley 1581/2012 (Habeas Data)</a>.
       </div>
     </aside>
 
@@ -213,7 +235,7 @@
     <nav class="footer__links">
       <a href="#soporte">Soporte</a>
       <a href="#terminos">Términos</a>
-      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
     </nav>
   </footer>
 
@@ -305,7 +327,7 @@
             </button>
           </div>
           <p *ngIf="!puedeMensajear && mensajesDrawer.length > 0" class="drawer__muted">
-            El hilo está cerrado: la solicitud ya no está en «Requiere información».
+            El hilo está cerrado: la solicitud ya fue resuelta.
           </p>
         </section>
 

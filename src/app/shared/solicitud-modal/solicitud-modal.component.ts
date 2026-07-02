@@ -1,5 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
-import { Beneficio, BeneficioDetalle, CATEGORIA_COLORS } from '../oati.types';
+import { Beneficio, BeneficioDetalle, categoriaColor } from '../oati.types';
 import { BeneficiosService } from '../../core/services/beneficios.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
 
@@ -63,7 +63,7 @@ export class SolicitudModalComponent implements OnInit {
   }
 
   categoriaStyle(): Record<string, string> {
-    const c = CATEGORIA_COLORS[this.beneficio.categoria] ?? CATEGORIA_COLORS['Formación'];
+    const c = categoriaColor(this.beneficio.categoria);
     return { background: c.bg, color: c.fg };
   }
 }

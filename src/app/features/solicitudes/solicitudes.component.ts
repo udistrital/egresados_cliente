@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { ActivatedRoute } from '@angular/router';
+import { Subject, timer } from 'rxjs';
+import { take, takeUntil } from 'rxjs/operators';
 import {
   Solicitud, EstadoSolicitud, HistorialEntrada, MensajeHilo,
   ESTADOS,
@@ -21,6 +22,9 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
   usuario: UsuarioSesion = this.sesionSvc.sesion;
 
   solicitudes: Solicitud[] = [];
+  /** true hasta la primera lista real (JIT + fetch); evita mostrar "sin
+   *  solicitudes" mientras el backend aún no ha respondido. */
+  cargandoSolicitudes = true;
   filtro: FiltroEstado = 'todas';
   query = '';
   menuOpen = false;
@@ -44,16 +48,33 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
+  /** Radicado llegado por query param (?radicado=BNF-…): abre el drawer al cargar.
+   *  Deep-link usado por la flecha "Ver detalle" del dashboard. */
+  private radicadoPendiente: string | null = null;
+
   constructor(
     private autenticacion: ImplicitAutenticationService,
     private sesionSvc: UsuarioSesionService,
     private solicitudesSvc: SolicitudesService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    this.radicadoPendiente = this.route.snapshot.queryParamMap.get('radicado');
+
     this.solicitudesSvc.cargar()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(solicitudes => (this.solicitudes = solicitudes));
+      .subscribe(solicitudes => {
+        this.solicitudes = solicitudes;
+        this.cargandoSolicitudes = false;
+        this.abrirDetallePendiente();
+      });
+
+    // Tope de gracia: si el JIT de egresado falla, cargar() nunca emite —
+    // soltar el skeleton y dejar que el estado vacío cuente la verdad.
+    timer(15000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => (this.cargandoSolicitudes = false));
 
     this.sesionSvc.sesion$
       .pipe(takeUntil(this.destroy$))
@@ -109,9 +130,21 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
       });
   }
 
-  puedeCancel(s: Solicitud): boolean { return s.estado === 'pendiente'; }
+  /** RN-005: cancelable mientras esté en curso (pendiente/requiere info/en revisión) */
+  puedeCancel(s: Solicitud): boolean {
+    return s.estado === 'pendiente' || s.estado === 'info' || s.estado === 'revision';
+  }
 
   /* ── Drawer de detalle ───────────────────────────────────── */
+
+  /** Abre el drawer de la solicitud pedida por query param, una sola vez. */
+  private abrirDetallePendiente(): void {
+    if (!this.radicadoPendiente) return;
+    const s = this.solicitudes.find(x => x.radicado === this.radicadoPendiente);
+    if (!s) return; // la lista aún puede estar vacía (JIT en curso); se reintenta al re-emitir
+    this.radicadoPendiente = null;
+    this.abrirDetalle(s);
+  }
 
   abrirDetalle(s: Solicitud): void {
     this.drawer = s;
@@ -145,20 +178,32 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
     return this.drawer ? this.mensajesCache : [];
   }
 
-  /** Solo se puede conversar mientras la solicitud está en REQUIERE_INFO (regla del MID) */
+  /** El hilo vive mientras la conversación está abierta: REQUIERE_INFO (te toca
+   *  responder) o EN_REVISION (la empresa revisa tu respuesta) — regla del MID. */
   get puedeMensajear(): boolean {
-    return this.drawer?.estado === 'info';
+    return this.drawer?.estado === 'info' || this.drawer?.estado === 'revision';
   }
 
   enviarMensaje(): void {
     if (!this.drawer || !this.puedeMensajear) return;
     const texto = this.nuevoMensaje.trim();
     if (!texto) return;
+    const radicado = this.drawer.radicado;
     this.solicitudesSvc.enviarMensaje(this.drawer, this.usuario.nombre, texto)
       .pipe(takeUntil(this.destroy$))
       .subscribe(mensajes => {
         this.mensajesCache = mensajes;
         this.nuevoMensaje = '';
+        // La respuesta del egresado puede mover el estado (REQUIERE_INFO →
+        // EN_REVISION en el MID): recargar la lista y refrescar el drawer.
+        this.solicitudesSvc.cargar()
+          .pipe(take(1), takeUntil(this.destroy$))
+          .subscribe(solicitudes => {
+            this.solicitudes = solicitudes;
+            if (this.drawer?.radicado === radicado) {
+              this.drawer = solicitudes.find(x => x.radicado === radicado) ?? this.drawer;
+            }
+          });
       });
   }
 

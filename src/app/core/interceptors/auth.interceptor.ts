@@ -5,15 +5,14 @@
 import { Injectable } from '@angular/core';
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // En demo no hay token; los assets locales tampoco lo necesitan
+    // Sin token no hay nada que anexar; los assets locales tampoco lo necesitan
     const token = window.localStorage.getItem('access_token');
-    if (environment.DEMO_MODE || !token || req.url.startsWith('assets/')) {
+    if (!token || req.url.startsWith('assets/')) {
       return next.handle(req);
     }
 

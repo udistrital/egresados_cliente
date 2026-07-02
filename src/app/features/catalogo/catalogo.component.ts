@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { Beneficio, CATEGORIA_COLORS } from '../../shared/oati.types';
+import { Beneficio, BENEFICIOS_INSTITUCIONALES_UD, CATEGORIA_COLORS, categoriaColor } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
 import { BeneficiosService } from '../../core/services/beneficios.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
@@ -40,7 +40,11 @@ export class CatalogoComponent implements OnInit, OnDestroy {
 
   page = 1;
 
-  readonly CATEGORIAS = [
+  /** Opciones del filtro de categoría. Se reconstruyen desde el servicio de
+   *  parámetros (misma fuente que las tarjetas, C-1) para que el filtro y los
+   *  datos estén siempre homologados; esta lista es solo el estado inicial
+   *  mientras responde (o si falla) el servicio. */
+  categorias: { value: string; label: string }[] = [
     { value: 'todas',      label: 'Todas' },
     { value: 'Formación',  label: 'Formación' },
     { value: 'Carrera',    label: 'Carrera' },
@@ -57,6 +61,9 @@ export class CatalogoComponent implements OnInit, OnDestroy {
 
   readonly CATEGORIA_COLORS = CATEGORIA_COLORS;
 
+  /** Beneficios institucionales UD (Política de Egresados, Acuerdo 004/2024) */
+  readonly BENEFICIOS_UD = BENEFICIOS_INSTITUCIONALES_UD;
+
   constructor(
     private autenticacion: ImplicitAutenticationService,
     private sesionSvc: UsuarioSesionService,
@@ -72,6 +79,22 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.beneficiosSvc.getCatalogo()
       .pipe(takeUntil(this.destroy$))
       .subscribe(beneficios => (this.beneficios = beneficios));
+
+    // Filtro de categorías homologado con los parámetros institucionales (C-1):
+    // misma fuente que usan las tarjetas, así nunca divergen.
+    this.beneficiosSvc.categorias$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(cats => {
+        if (cats.size === 0) return; // servicio caído: se conserva el fallback estático
+        this.categorias = [
+          { value: 'todas', label: 'Todas' },
+          ...[...cats.values()].map(nombre => ({ value: nombre, label: nombre })),
+        ];
+        // Si el filtro activo ya no existe (p. ej. tras recargar), volver a 'todas'
+        if (!this.categorias.some(c => c.value === this.filtros.categoria)) {
+          this.filtros.categoria = 'todas';
+        }
+      });
 
     // Precarga "mis solicitudes" para que yaSolicitado() (RN-007) sea síncrono
     this.solicitudesSvc.cargar()
@@ -170,7 +193,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   }
 
   categoriaStyle(cat: string): Record<string, string> {
-    const c = CATEGORIA_COLORS[cat] ?? CATEGORIA_COLORS['Formación'];
+    const c = categoriaColor(cat);
     return { background: c.bg, color: c.fg };
   }
 

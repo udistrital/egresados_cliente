@@ -1,13 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { timer } from 'rxjs';
+import { filter, take, takeUntil } from 'rxjs/operators';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
+import { UsuarioSesionService } from '../../core/services/usuario-sesion.service';
 
-type Rol = 'egresado' | 'empresa';
-type ErrorScenario = 'none' | 'invalid' | 'unverified' | 'inactiveCode';
+type ErrorScenario = 'none' | 'invalid' | 'unverified' | 'inactiveCode' | 'servicio';
 
-interface RolConfig {
-  icon: string;
-  label: string;
+interface RegistroCta {
+  text: string;
+  cta: string;
+  url: string;
+  logo: string;
+}
+
+interface LoginConfig {
   eyebrow: string;
   displayPre: string;
   displayEm: string;
@@ -17,9 +24,7 @@ interface RolConfig {
   cardEyebrow: string;
   cardTitle: string;
   cardSubtitle: string;
-  idField: { label: string; hint: string | null; placeholder: string };
-  register: { text: string; cta: string; url: string; logo: string };
-  forgot: { text: string; url: string };
+  register: RegistroCta;
 }
 
 @Component({
@@ -28,65 +33,37 @@ interface RolConfig {
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent implements OnInit {
-  rol: Rol = 'egresado';
-  identifier = '';
-  password = '';
-  showPassword = false;
-  remember = true;
   loading = false;
   errorScenario: ErrorScenario = 'none';
-  swapping = false;
+  /** Hay token vigente: en vez de la pantalla de login se muestra un splash
+   *  mientras userRol resuelve el perfil y se enruta (evita el "flash" del login). */
+  redirigiendo = false;
 
-  readonly ROLES: Record<Rol, RolConfig> = {
-    egresado: {
-      icon: 'school',
-      label: 'Egresado',
-      eyebrow: 'Catálogo de beneficios · 2026-1',
-      displayPre: 'Aprovecha tu ',
-      displayEm: 'vínculo de por vida',
-      displayPost: ' con la UD.',
-      lede: 'Accede al catálogo de beneficios que las empresas aliadas ofrecen a la red de egresados de la Universidad Distrital. Solicítalos en línea y haz seguimiento desde tu portal personal.',
-      stats: [
-        { num: '247',   label: 'Beneficios activos en catálogo' },
-        { num: '12',    label: 'Categorías de beneficios' },
-        { num: '1 850', label: 'Solicitudes radicadas en 2026' },
-      ],
-      cardEyebrow: 'Acceso egresado',
-      cardTitle: 'Iniciar sesión',
-      cardSubtitle: 'Usa tu cuenta institucional de la Universidad Distrital para acceder al portal de beneficios.',
-      idField: { label: 'Número de cédula', hint: null, placeholder: '1 026 287 543' },
-      register: {
-        text: '¿Eres egresado UD y aún no tienes cuenta?',
-        cta: 'Regístrate aquí',
-        url: '/registro/egresado',
-        logo: 'assets/images/isotipos/sga.svg',
-      },
-      forgot: { text: 'Olvidé mi contraseña', url: '#recuperar' },
-    },
-    empresa: {
-      icon: 'domain',
-      label: 'Empresa aliada',
-      eyebrow: 'Empresas aliadas · 2026-1',
-      displayPre: 'Conecta con la ',
-      displayEm: 'comunidad de egresados',
-      displayPost: ' UD.',
-      lede: 'Publica beneficios dirigidos a egresados, recibe y gestiona solicitudes en tu bandeja, y registra redenciones — todo desde un único portal.',
-      stats: [
-        { num: '47',    label: 'Empresas aliadas activas en el portal' },
-        { num: '247',   label: 'Beneficios publicados este periodo' },
-        { num: '1 850', label: 'Solicitudes gestionadas en 2026' },
-      ],
-      cardEyebrow: 'Acceso empresa',
-      cardTitle: 'Iniciar sesión',
-      cardSubtitle: 'Usa la cuenta institucional registrada para acceder al portal de gestión de beneficios.',
-      idField: { label: 'NIT o correo corporativo', hint: null, placeholder: '900.123.456-7 · talento@empresa.com' },
-      register: {
-        text: '¿Tu empresa aún no es aliada UD?',
-        cta: 'Registra tu empresa',
-        url: '/registro/empresa',
-        logo: 'assets/images/isotipos/agora.svg',
-      },
-      forgot: { text: 'Olvidé mi contraseña', url: '#recuperar-empresa' },
+  /* Login ÚNICO para ambos perfiles (D-5, confirmado OATI 2026-07-01): egresados y
+     empresas entran por el MISMO flujo WSO2; la rama se decide DESPUÉS del login
+     según el Estado que devuelve userRol. Por eso no hay selector de rol. */
+  readonly cfg: LoginConfig = {
+    eyebrow: 'Portal de beneficios · 2026-1',
+    displayPre: 'Aprovecha tu ',
+    displayEm: 'vínculo de por vida',
+    displayPost: ' con la UD.',
+    lede: 'Egresados: explora el catálogo de beneficios y solicítalos en línea. Empresas aliadas: publica beneficios y gestiona solicitudes en tu bandeja. Todo desde un único portal, con tu cuenta institucional.',
+    stats: [
+      { num: '247',   label: 'Beneficios activos en catálogo' },
+      { num: '47',    label: 'Empresas aliadas activas en el portal' },
+      { num: '1 850', label: 'Solicitudes radicadas en 2026' },
+    ],
+    cardEyebrow: 'Acceso al portal',
+    cardTitle: 'Iniciar sesión',
+    cardSubtitle: 'Ingresa con tu cuenta institucional de la Universidad Distrital. El portal identifica automáticamente si eres egresado o empresa aliada.',
+    // Registro ÚNICO: egresados y empresas se auto-registran en la misma página
+    // institucional (WSO2 self-signup, confirmado OATI). La URL definitiva del
+    // registro institucional está pendiente de OATI; mientras tanto es placeholder.
+    register: {
+      text: '¿Aún no tienes cuenta institucional?',
+      cta: 'Regístrate aquí',
+      url: '/registro',
+      logo: 'assets/images/isotipos/sga.svg',
     },
   };
 
@@ -104,21 +81,42 @@ export class LoginComponent implements OnInit {
       title: 'Egresado no registrado',
       body: 'La cédula no figura registrada en el portal de beneficios. Regístrate primero o comunícate con la Oficina de Egresados.',
     },
+    servicio: {
+      title: 'No pudimos completar el ingreso',
+      body: 'Tu autenticación fue exitosa pero el servicio de identidad institucional no respondió. Intenta de nuevo en unos minutos.',
+    },
   };
 
-  get cfg(): RolConfig { return this.ROLES[this.rol]; }
   get errorObj() { return this.ERRORS[this.errorScenario]; }
   get alertKind() { return this.errorScenario === 'unverified' ? 'warning' : 'danger'; }
-  get passwordType() { return this.showPassword ? 'text' : 'password'; }
 
   constructor(
     private router: Router,
     private autenticacion: ImplicitAutenticationService,
+    private sesionSvc: UsuarioSesionService,
   ) {}
 
   ngOnInit(): void {
     const token = localStorage.getItem('access_token');
-    if (token) { this.router.navigate(['/catalogo']); }
+    if (!token) return;
+    this.redirigiendo = true;
+    // La rama egresado/empresa se conoce cuando userRol responde (Estado, D-5):
+    // esperar la primera sesión resuelta y enrutar cada perfil a su portal.
+    // Timeout de gracia: si la sesión no resuelve (userRol caído/504), volver al
+    // formulario con aviso en vez de dejar al usuario pegado en el splash.
+    const rendirse$ = timer(10000);
+    this.sesionSvc.sesion$
+      .pipe(filter(s => !!s.email), take(1), takeUntil(rendirse$))
+      .subscribe({
+        next: s => this.router.navigate([s.esEmpresa ? '/empresa/dashboard' : '/catalogo']),
+        complete: () => {
+          if (this.redirigiendo && !this.sesionSvc.sesion.email) {
+            console.warn('[login] la sesión no resolvió en 10s — se vuelve al formulario');
+            this.redirigiendo = false;
+            this.errorScenario = 'servicio';
+          }
+        },
+      });
   }
 
   login(): void {
@@ -129,26 +127,5 @@ export class LoginComponent implements OnInit {
     // activa, no volverá a pedir credenciales.
     this.autenticacion.clearStorage();
     this.autenticacion.login(false);
-  }
-
-  setRol(nuevoRol: Rol): void {
-    if (this.rol === nuevoRol) return;
-    this.swapping = true;
-    setTimeout(() => {
-      this.rol = nuevoRol;
-      this.identifier = '';
-      this.password = '';
-      this.errorScenario = 'none';
-      setTimeout(() => { this.swapping = false; }, 20);
-    }, 160);
-  }
-
-  togglePassword(): void { this.showPassword = !this.showPassword; }
-
-  onSubmit(): void {
-    if (this.loading) return;
-    this.loading = true;
-    // En integración real: llamar a ImplicitAutenticationService.login()
-    setTimeout(() => { this.loading = false; }, 1600);
   }
 }

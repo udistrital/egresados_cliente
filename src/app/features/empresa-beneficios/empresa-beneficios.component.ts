@@ -3,13 +3,14 @@
    RF-005: publicación de beneficios (solo empresas aprobadas)
    ============================================================ */
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
-  Empresa, BeneficioEmpresa, CategoriaBeneficio,
-  CATEGORIA_COLORS, EMPRESA_DEMO,
+  Empresa, BeneficioEmpresa,
+  CATEGORIA_COLORS, categoriaColor, EMPRESA_VACIA,
 } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
+import { BeneficiosService } from '../../core/services/beneficios.service';
 import { EmpresaService, FormPublicarBeneficio } from '../../core/services/empresa.service';
 
 @Component({
@@ -19,8 +20,10 @@ import { EmpresaService, FormPublicarBeneficio } from '../../core/services/empre
 })
 export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 
-  empresa: Empresa = EMPRESA_DEMO;
+  empresa: Empresa = EMPRESA_VACIA;
   beneficios: BeneficioEmpresa[] = [];
+  /** true hasta la primera lista real (JIT + fetch) */
+  cargandoBeneficios = true;
 
   menuOpen = false;
   mostrarFormulario = false;
@@ -28,36 +31,94 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 
   readonly CATEGORIA_COLORS = CATEGORIA_COLORS;
 
-  readonly CATEGORIAS: { value: CategoriaBeneficio; label: string }[] = [
-    { value: 'Formación',  label: 'Formación' },
-    { value: 'Carrera',    label: 'Carrera' },
-    { value: 'Servicios',  label: 'Servicios' },
-    { value: 'Salud',      label: 'Salud' },
-    { value: 'Cultura',    label: 'Cultura' },
-  ];
+  /** Opciones del selector de categoría, homologadas con el servicio de
+   *  parámetros (C-1). value = ID del parámetro (lo que el MID espera en
+   *  categoria_beneficio_id); con nombres quemados el id no se resolvía y el
+   *  payload salía sin categoría. */
+  categorias: { value: string; label: string }[] = [];
 
   form: FormPublicarBeneficio = this.formVacio();
+
+  /* ── Filtros / orden de la lista ─────────────────────────── */
+  filtroEstado: 'todos' | 'activo' | 'agotado' | 'vencido' | 'borrador' | 'retirado' = 'todos';
+  orden: 'recientes' | 'vencen' | 'pendientes' = 'recientes';
+  query = '';
+
+  readonly FILTROS_ESTADO = [
+    { value: 'todos',    label: 'Todos' },
+    { value: 'activo',   label: 'Activos' },
+    { value: 'agotado',  label: 'Agotados' },
+    { value: 'vencido',  label: 'Vencidos' },
+    { value: 'borrador', label: 'Borradores' },
+    { value: 'retirado', label: 'Retirados' },
+  ];
+
+  readonly ORDEN_OPTS = [
+    { value: 'recientes',  label: 'Más recientes' },
+    { value: 'vencen',     label: 'Vencen pronto' },
+    { value: 'pendientes', label: 'Más pendientes' },
+  ];
 
   private destroy$ = new Subject<void>();
 
   constructor(
     private autenticacion: ImplicitAutenticationService,
     private empresaSvc: EmpresaService,
+    private beneficiosSvc: BeneficiosService,
   ) {}
 
   ngOnInit(): void {
+    this.beneficiosSvc.categorias$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(cats => {
+        this.categorias = [...cats.entries()]
+          .map(([id, nombre]) => ({ value: String(id), label: nombre }));
+      });
+
     this.empresaSvc.getEmpresa()
       .pipe(takeUntil(this.destroy$))
       .subscribe(empresa => (this.empresa = empresa));
 
     this.empresaSvc.getBeneficiosEmpresa()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(beneficios => (this.beneficios = beneficios));
+      .subscribe(beneficios => {
+        this.beneficios = beneficios;
+        this.cargandoBeneficios = false;
+      });
+
+    // Tope de gracia: si el JIT de empresa falla, la fachada nunca emite —
+    // soltar el skeleton y dejar que el estado vacío cuente la verdad.
+    timer(15000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => (this.cargandoBeneficios = false));
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /* ── Lista filtrada / ordenada ───────────────────────────── */
+  get beneficiosFiltrados(): BeneficioEmpresa[] {
+    let arr = [...this.beneficios];
+    if (this.filtroEstado !== 'todos') {
+      arr = arr.filter(b => b.estadoPublicacion === this.filtroEstado);
+    }
+    const q = this.query.trim().toLowerCase();
+    if (q) {
+      arr = arr.filter(b =>
+        b.titulo.toLowerCase().includes(q) ||
+        b.categoria.toLowerCase().includes(q));
+    }
+    if (this.orden === 'vencen') {
+      arr.sort((a, b) => (a.fechaFinIso ?? '9999').localeCompare(b.fechaFinIso ?? '9999'));
+    } else if (this.orden === 'pendientes') {
+      arr.sort((a, b) => b.solicitudesPendientes - a.solicitudesPendientes);
+    } else {
+      // "recientes": el id autoincremental refleja el orden de creación
+      arr.sort((a, b) => Number(b.id) - Number(a.id));
+    }
+    return arr;
   }
 
   /* ── Stats rápidas ─────────────────────────────────────── */
@@ -110,25 +171,31 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 
   /* ── Helpers de vista ──────────────────────────────────── */
   categoriaStyle(cat: string): Record<string, string> {
-    const c = CATEGORIA_COLORS[cat] ?? CATEGORIA_COLORS['Formación'];
+    const c = categoriaColor(cat);
     return { background: c.bg, color: c.fg };
   }
 
   estadoCls(b: BeneficioEmpresa): string {
-    if (b.estadoPublicacion === 'agotado') return 'pub-badge pub-badge--agotado';
-    if (b.estadoPublicacion === 'vencido') return 'pub-badge pub-badge--vencido';
+    if (b.estadoPublicacion === 'agotado')  return 'pub-badge pub-badge--agotado';
+    if (b.estadoPublicacion === 'vencido')  return 'pub-badge pub-badge--vencido';
+    if (b.estadoPublicacion === 'retirado') return 'pub-badge pub-badge--vencido';
+    if (b.estadoPublicacion === 'borrador') return 'pub-badge';
     return 'pub-badge pub-badge--activo';
   }
 
   estadoLabel(b: BeneficioEmpresa): string {
-    if (b.estadoPublicacion === 'agotado') return 'Agotado';
-    if (b.estadoPublicacion === 'vencido') return 'Vencido';
+    if (b.estadoPublicacion === 'agotado')  return 'Agotado';
+    if (b.estadoPublicacion === 'vencido')  return 'Vencido';
+    if (b.estadoPublicacion === 'retirado') return 'Retirado';
+    if (b.estadoPublicacion === 'borrador') return 'Borrador';
     return 'Activo';
   }
 
   estadoIcon(b: BeneficioEmpresa): string {
-    if (b.estadoPublicacion === 'agotado') return 'block';
-    if (b.estadoPublicacion === 'vencido') return 'event_busy';
+    if (b.estadoPublicacion === 'agotado')  return 'block';
+    if (b.estadoPublicacion === 'vencido')  return 'event_busy';
+    if (b.estadoPublicacion === 'retirado') return 'archive';
+    if (b.estadoPublicacion === 'borrador') return 'edit_note';
     return 'check_circle';
   }
 

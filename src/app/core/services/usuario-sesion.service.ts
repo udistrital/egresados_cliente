@@ -8,16 +8,16 @@
    dashboard/catalogo/solicitudes/beneficio-detalle, y expone
    los ids locales del módulo (usuario/egresado/empresa).
 
-   ⚠️ Los ids locales salen del JIT provisioning del MID, que aún
-   no está implementado (bloqueado por la aprobación de la BD).
-   Cuando exista el endpoint tipo GET /v1/usuarios/yo, resolverlos
-   en construir() — es el ÚNICO punto a tocar.
+   Los ids locales del egresado salen del JIT provisioning del MID
+   (POST /v1/egresados/provision, sin body: la identidad se deriva
+   del token vía OIDC userinfo). El de empresa sigue pendiente de
+   cablear (POST /v1/empresas/provision + selector multiempresa).
    ============================================================ */
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { EGRESADO_DEMO } from '../../shared/oati.types';
+import { BeneficiosMidService } from '../api/beneficios-mid.service';
 import { PerfilApiService, TerceroDto } from '../api/perfil-api.service';
 import { ImplicitAutenticationService } from './implicit-autentication.service';
 
@@ -56,19 +56,79 @@ export class UsuarioSesionService {
   constructor(
     private autenticacion: ImplicitAutenticationService,
     private perfilApi: PerfilApiService,
+    private midApi: BeneficiosMidService,
   ) {
     this.autenticacion.user$.subscribe((data: any) => {
       const { user, userService } = data ?? {};
       if (!user && !userService) return;
       const base = this.construir(user, userService);
       this.sesionSubject.next(base);
-      if (!base.esEmpresa) this.enriquecerPerfilEgresado(base);
+      if (base.esEmpresa) {
+        this.provisionarEmpresa();
+      } else {
+        this.enriquecerPerfilEgresado(base);
+        this.provisionarEgresado();
+      }
     });
   }
 
   /** Última sesión conocida (lectura síncrona para guards y fachadas). */
   get sesion(): UsuarioSesion {
     return this.sesionSubject.value;
+  }
+
+  /** Mezcla un cambio parcial sobre la última sesión emitida (evita que flujos
+   *  asíncronos concurrentes —perfil C-2a y JIT— se pisen entre sí). */
+  private patch(p: Partial<UsuarioSesion>): void {
+    this.sesionSubject.next({ ...this.sesionSubject.value, ...p });
+  }
+
+  /**
+   * JIT provisioning de empresa: resuelve (o crea) usuario/empresa/usuario_empresa
+   * locales a partir de los proveedores de Ágora asociados al correo del token.
+   * Se toma la primera empresa (es_principal); el selector multiempresa para el
+   * caso 1:N queda pendiente de UI (GET /v1/usuarios/:id/empresas ya existe).
+   */
+  private provisionarEmpresa(): void {
+    if (this.sesion.empresaId != null) return;
+    this.midApi.provisionarEmpresa().subscribe({
+      next: r => {
+        const principal = r.empresas?.[0];
+        if (!(r.usuario_id > 0 && principal && principal.empresa_id > 0)) {
+          console.warn('[jit] provision de empresa devolvió datos inválidos — ids locales quedan null', r);
+          return;
+        }
+        const razonSocial = principal.proveedor?.razon_social;
+        this.patch({
+          usuarioId: r.usuario_id,
+          empresaId: principal.empresa_id,
+          // userRol de empresa no trae nombre de persona: la razón social es la
+          // mejor identidad visible (antes quedaba el correo).
+          ...(razonSocial ? { nombre: razonSocial, primerNombre: razonSocial } : {}),
+        });
+      },
+      error: err => console.warn('[jit] provision de empresa falló — ids locales quedan null', err),
+    });
+  }
+
+  /**
+   * JIT provisioning contra el MID: resuelve (o crea) usuario/egresado locales.
+   * Si falla, los ids quedan null y la UI conserva el aviso de perfil no habilitado.
+   */
+  private provisionarEgresado(): void {
+    if (this.sesion.egresadoId != null) return;
+    this.midApi.provisionarEgresado().subscribe({
+      next: r => {
+        // Un id 0/negativo es una respuesta corrupta: dejar null (aviso de perfil
+        // no habilitado) en vez de propagar un id inválido a las solicitudes.
+        if (!(r.usuario_id > 0 && r.egresado_id > 0)) {
+          console.warn('[jit] provision devolvió ids inválidos — ids locales quedan null', r);
+          return;
+        }
+        this.patch({ usuarioId: r.usuario_id, egresadoId: r.egresado_id });
+      },
+      error: err => console.warn('[jit] provision de egresado falló — ids locales quedan null', err),
+    });
   }
 
   private construir(user: any, userService: any): UsuarioSesion {
@@ -81,13 +141,15 @@ export class UsuarioSesionService {
     const documento: string = userService?.documento ?? userService?.Documento ?? '';
 
     const roles: string[] = userService?.role ?? user?.role ?? [];
-    const esEmpresa = roles.some(r => environment.ROLES_EMPRESA.includes(r));
-
-    // TODO(JIT): resolver contra el MID cuando exista el endpoint de identidad local.
-    // En demo se usan ids fijos coherentes con la semilla del schema.
-    const demoIds = environment.DEMO_MODE
-      ? { usuarioId: 1, egresadoId: esEmpresa ? null : 1, empresaId: esEmpresa ? 1 : null }
-      : { usuarioId: null, egresadoId: null, empresaId: null };
+    // Rama egresado/empresa por el Estado de userRol (regla D-5, misma que el MID):
+    // 'E' = egresado; cualquier OTRO valor presente (incluido vacío, caso empresa
+    // self-signup verificado 2026-07-01) = usuario de empresa. Si userRol falló y
+    // Estado no llegó, se asume egresado (default seguro del portal).
+    // ROLES_EMPRESA queda como refuerzo para cuando OATI cree los roles (D-8).
+    const estado: unknown = userService?.Estado ?? userService?.estado;
+    const esEmpresa =
+      (typeof estado === 'string' && estado.trim().toUpperCase() !== 'E') ||
+      roles.some(r => environment.ROLES_EMPRESA.includes(r));
 
     return {
       iniciales: iniciales(nombreCompleto, email),
@@ -95,9 +157,14 @@ export class UsuarioSesionService {
       nombre: nombreCompleto || email,
       email,
       documento,
-      rol: roles[0] ?? (esEmpresa ? 'Empresa' : 'Egresado'),
+      // Etiqueta del portal, NO el rol crudo de WSO2 (clalapea traía roles
+      // administrativos del SGA como ASISTENTE_JURIDICA que aquí son ruido).
+      rol: esEmpresa ? 'Empresa aliada' : 'Egresado',
       esEmpresa,
-      ...demoIds,
+      // Los ids locales los resuelve el JIT provisioning (provisionarEgresado).
+      usuarioId: null,
+      egresadoId: null,
+      empresaId: null,
     };
   }
 
@@ -106,15 +173,6 @@ export class UsuarioSesionService {
    * Cada paso degrada con gracia: si un servicio falla, se conserva lo que ya hay.
    */
   private enriquecerPerfilEgresado(base: UsuarioSesion): void {
-    if (environment.DEMO_MODE) {
-      this.sesionSubject.next({
-        ...base,
-        codigo: '20181020043',
-        programa: EGRESADO_DEMO.programa,
-        facultad: EGRESADO_DEMO.facultad,
-      });
-      return;
-    }
     if (!base.documento) {
       console.warn('[perfil] sesión sin documento (¿falló token/userRol?) — no se puede consultar terceros_crud');
       return;
@@ -160,7 +218,10 @@ export class UsuarioSesionService {
         console.warn('[perfil] terceros_crud falló — perfil mínimo desde el token', err);
         return of(base);
       }),
-    ).subscribe(sesion => this.sesionSubject.next(sesion));
+      // Patch de SOLO los campos del perfil: la sesión derivada de `base` trae los ids
+      // locales en null y sobreescribirla completa pisaría los del JIT si llegó antes.
+    ).subscribe(({ nombre, primerNombre, iniciales, codigo, programa, facultad }) =>
+      this.patch({ nombre, primerNombre, iniciales, codigo, programa, facultad }));
   }
 }
 

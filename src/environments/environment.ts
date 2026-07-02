@@ -6,12 +6,6 @@
 export const environment = {
   production: false,
 
-  // ─── DEMO ────────────────────────────────────────────────────────────────────
-  // Quitar (o poner false) cuando se integre el login real con WSO2.
-  DEMO_MODE: true,
-  DEMO_ROL: 'egresado' as 'empresa' | 'egresado',
-  // ─────────────────────────────────────────────────────────────────────────────
-
   TOKEN: {
     AUTORIZATION_URL: 'https://autenticacion.portaloas.udistrital.edu.co/oauth2/authorize',
     // ← Reemplazar con el Client ID que entregue OATI para este proyecto.
@@ -38,7 +32,7 @@ export const environment = {
   // en despliegue OATI lo expone tras el gateway /apioas/ (ver environment.prod.ts).
   BENEFICIOS_MID: 'http://localhost:8081/v1',
 
-  // Roles de WSO2 que habilitan cada vista. En DEMO_MODE el rol es DEMO_ROL.
+  // Roles de WSO2 que habilitan cada vista.
   // ← Confirmar con OATI los nombres reales de los roles (D-5/D-7) y ampliar aquí.
   ROLES_EGRESADO: ['egresado', 'EGRESADO'],
   ROLES_EMPRESA: ['empresa', 'EMPRESA'],

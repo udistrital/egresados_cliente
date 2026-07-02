@@ -1,14 +1,16 @@
 /* ============================================================
    Mapeadores DTO del backend → modelos de la UI (oati.types).
    Centralizan la traducción snake_case/ids de parámetro → los
-   tipos que ya consumen los componentes, para que el cambio
-   DEMO_MODE → integración real no toque las vistas.
+   tipos que consumen los componentes; las vistas nunca ven la
+   forma cruda del MID.
    ============================================================ */
 import {
-  Beneficio, BeneficioDetalle, CategoriaBeneficio, EstadoSolicitud,
-  HistorialEntrada, MensajeHilo, Solicitud, SolicitudRecibida,
+  Beneficio, BeneficioDetalle, BeneficioEmpresa, CategoriaBeneficio, EstadoSolicitud,
+  HistorialEntrada, MensajeHilo, PerfilEmpresa, Solicitud, SolicitudRecibida,
 } from '../../shared/oati.types';
-import { BandejaItemDto, BeneficioDto, HistorialDto, MensajeDto, SolicitudDto } from './api.types';
+import {
+  BandejaItemDto, BeneficioDto, HistorialDto, MensajeDto, PerfilEmpresaDto, SolicitudDto,
+} from './api.types';
 
 /** codigo_abreviacion del parámetro ESTADO_SOLICITUD → clave de estado de la UI */
 export const CODIGO_TO_ESTADO: Record<string, EstadoSolicitud> = {
@@ -77,11 +79,49 @@ export function mapBeneficio(dto: BeneficioDto, categorias: CategoriaMap): Benef
     publicado: fechaRelativa(dto.fecha_publicacion ?? dto.fecha_creacion),
     destacado: false, // el backend aún no modela destacados
     resumen: truncar(dto.descripcion),
+    empresaId: dto.empresa?.id,
+    fechaFinIso: dto.fecha_fin,
+    totalSolicitudes: dto.total_solicitudes,
   };
 }
 
 export function mapBeneficioDetalle(dto: BeneficioDto): BeneficioDetalle {
   return { descripcion: dto.descripcion, condiciones: dto.condiciones };
+}
+
+/** Vista de gestión del dueño: beneficio + estado de publicación + métricas. */
+export function mapBeneficioEmpresa(dto: BeneficioDto, categorias: CategoriaMap): BeneficioEmpresa {
+  const base = mapBeneficio(dto, categorias);
+  const vencidoPorFecha = dto.fecha_fin
+    ? new Date(dto.fecha_fin).getTime() < Date.now()
+    : false;
+  const estado = dto.estado_beneficio;
+  const estadoPublicacion: BeneficioEmpresa['estadoPublicacion'] =
+    estado === 'BORRADOR' ? 'borrador' :
+    estado === 'RETIRADO' ? 'retirado' :
+    (estado === 'VENCIDO' || vencidoPorFecha) ? 'vencido' :
+    dto.cupos_disponibles === 0 ? 'agotado' : 'activo';
+  return {
+    ...base,
+    estadoPublicacion,
+    solicitudesRecibidas: dto.total_solicitudes ?? 0,
+    solicitudesPendientes: dto.solicitudes_pendientes ?? 0,
+  };
+}
+
+export function mapPerfilEmpresa(dto: PerfilEmpresaDto): PerfilEmpresa {
+  return {
+    empresaId: dto.empresa_id,
+    razonSocial: dto.razon_social,
+    descripcion: dto.descripcion,
+    sitioWeb: dto.sitio_web,
+    telefono: dto.telefono,
+    direccion: dto.direccion,
+    correoContacto: dto.correo_contacto,
+    aliadoDesde: dto.aliado_desde,
+    beneficiosPublicados: dto.beneficios_publicados ?? 0,
+    beneficiosEntregados: dto.beneficios_entregados ?? 0,
+  };
 }
 
 export function mapSolicitud(dto: SolicitudDto, categorias: CategoriaMap): Solicitud {

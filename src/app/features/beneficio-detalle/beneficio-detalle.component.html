@@ -82,11 +82,16 @@
     </div>
 
     <ng-container *ngIf="beneficio">
-      <!-- ── Encabezado del beneficio ─────────────────────────── -->
-      <section class="bdet-hero" [class.is-agotado]="agotado">
+      <!-- ── Encabezado del beneficio (tematizado por categoría) ── -->
+      <section class="bdet-hero" [class.is-agotado]="agotado" [ngClass]="'bdet-hero--' + tema.cls">
+        <mat-icon class="bdet-hero__watermark" aria-hidden="true">{{ tema.icon }}</mat-icon>
+
         <div class="bdet-hero__main">
           <div class="bdet-hero__tags">
-            <span class="categoria-tag" [ngStyle]="categoriaStyle()">{{ beneficio.categoria }}</span>
+            <span class="categoria-tag" [ngStyle]="categoriaStyle()">
+              <mat-icon style="font-size:13px;height:13px;width:13px">{{ tema.icon }}</mat-icon>
+              {{ beneficio.categoria }}
+            </span>
             <span *ngIf="beneficio.destacado" class="bdet-hero__pill">
               <mat-icon style="font-size:12px;height:12px;width:12px">check_circle</mat-icon>
               Destacado
@@ -103,8 +108,29 @@
             <span class="bdet-hero__mark" aria-hidden="true">{{ beneficio.empresa.charAt(0).toUpperCase() }}</span>
             <div>
               <strong>{{ beneficio.empresa }}</strong>
-              <span class="bdet-hero__pub">Publicado {{ beneficio.publicado.toLowerCase() }}</span>
+              <span class="bdet-hero__pub">
+                Empresa aliada UD<ng-container *ngIf="aliadoDesdeLabel"> · desde {{ aliadoDesdeLabel }}</ng-container>
+                · Publicado {{ beneficio.publicado.toLowerCase() }}
+              </span>
             </div>
+          </div>
+
+          <!-- Datos rápidos -->
+          <div class="bdet-hero__facts">
+            <span class="bdet-fact">
+              <mat-icon>event</mat-icon>
+              Vigente hasta <strong>{{ beneficio.vigenciaHasta }}</strong>
+            </span>
+            <span class="bdet-fact" *ngIf="diasRestantes !== null">
+              <mat-icon>hourglass_top</mat-icon>
+              <ng-container *ngIf="diasRestantes > 1">Cierra en <strong>{{ diasRestantes }} días</strong></ng-container>
+              <ng-container *ngIf="diasRestantes === 1">Cierra <strong>mañana</strong></ng-container>
+              <ng-container *ngIf="diasRestantes === 0">Cierra <strong>hoy</strong></ng-container>
+            </span>
+            <span class="bdet-fact" *ngIf="totalSolicitudes > 0">
+              <mat-icon>groups</mat-icon>
+              <strong>{{ totalSolicitudes }}</strong>&nbsp;egresado{{ totalSolicitudes === 1 ? '' : 's' }} ya lo {{ totalSolicitudes === 1 ? 'ha' : 'han' }} solicitado
+            </span>
           </div>
         </div>
 
@@ -122,7 +148,11 @@
 
           <div class="bdet-cta__vigencia">
             <mat-icon style="font-size:15px;height:15px;width:15px">hourglass_empty</mat-icon>
-            Vence {{ beneficio.vigenciaHasta }}
+            <ng-container *ngIf="diasRestantes !== null && diasRestantes <= 15; else fechaLarga">
+              {{ diasRestantes === 0 ? 'Último día para solicitarlo' :
+                 diasRestantes === 1 ? 'Cierra mañana' : 'Cierra en ' + diasRestantes + ' días' }}
+            </ng-container>
+            <ng-template #fechaLarga>Vence {{ beneficio.vigenciaHasta }}</ng-template>
           </div>
 
           <button
@@ -139,6 +169,11 @@
             <ng-container *ngIf="agotado && !yaSolicitado">Sin cupos</ng-container>
           </button>
 
+          <span *ngIf="totalSolicitudes > 0" class="bdet-cta__proof">
+            <mat-icon style="font-size:14px;height:14px;width:14px">groups</mat-icon>
+            {{ totalSolicitudes }} egresado{{ totalSolicitudes === 1 ? '' : 's' }} ya lo {{ totalSolicitudes === 1 ? 'ha' : 'han' }} solicitado
+          </span>
+
           <a *ngIf="yaSolicitado" class="link bdet-cta__link" routerLink="/solicitudes">
             Ver el estado en Mis solicitudes
             <mat-icon style="font-size:14px;height:14px;width:14px">arrow_forward</mat-icon>
@@ -150,8 +185,8 @@
       <section class="bdet-body">
         <article class="bdet-card">
           <h2>
-            <mat-icon style="font-size:18px;height:18px;width:18px">description</mat-icon>
-            ¿En qué consiste?
+            <mat-icon style="font-size:18px;height:18px;width:18px">redeem</mat-icon>
+            Qué obtienes
           </h2>
           <p>{{ detalle?.descripcion ?? beneficio.resumen }}</p>
         </article>
@@ -159,14 +194,78 @@
         <article class="bdet-card bdet-card--condiciones">
           <h2>
             <mat-icon style="font-size:18px;height:18px;width:18px">gavel</mat-icon>
-            Condiciones
+            Condiciones y requisitos
           </h2>
-          <p *ngIf="detalle">{{ detalle.condiciones }}</p>
-          <p *ngIf="!detalle" class="muted">La empresa no registró condiciones adicionales.</p>
+          <ul *ngIf="condicionesLista.length" class="bdet-check-list">
+            <li *ngFor="let c of condicionesLista">
+              <mat-icon>check_circle</mat-icon>
+              {{ c }}
+            </li>
+          </ul>
+          <p *ngIf="!condicionesLista.length && detalle?.condiciones">{{ detalle?.condiciones }}</p>
+          <p *ngIf="!detalle?.condiciones" class="muted">La empresa no registró condiciones adicionales.</p>
           <div class="bdet-card__note">
             <mat-icon style="font-size:15px;height:15px;width:15px">info</mat-icon>
             Al solicitar el beneficio aceptas estas condiciones. La empresa puede pedirte
             información adicional antes de aprobar tu solicitud.
+          </div>
+        </article>
+      </section>
+
+      <!-- ── Acerca de la empresa ─────────────────────────────── -->
+      <section *ngIf="perfilEmpresa" class="bdet-empresa">
+        <article class="bdet-card">
+          <h2>
+            <mat-icon style="font-size:18px;height:18px;width:18px">domain</mat-icon>
+            Acerca de {{ perfilEmpresa.razonSocial }}
+          </h2>
+
+          <div class="bdet-empresa__head">
+            <span class="bdet-empresa__mark" aria-hidden="true">
+              {{ perfilEmpresa.razonSocial.charAt(0).toUpperCase() }}
+            </span>
+            <div class="bdet-empresa__id">
+              <strong>{{ perfilEmpresa.razonSocial }}</strong>
+              <span class="bdet-empresa__verified">
+                <mat-icon style="font-size:14px;height:14px;width:14px">verified</mat-icon>
+                Proveedor registrado ante la UD<ng-container *ngIf="aliadoDesdeLabel"> desde {{ aliadoDesdeLabel }}</ng-container>
+              </span>
+            </div>
+            <div class="bdet-empresa__stats">
+              <span class="bdet-empresa__stat">
+                <strong>{{ perfilEmpresa.beneficiosPublicados }}</strong>
+                beneficio{{ perfilEmpresa.beneficiosPublicados === 1 ? '' : 's' }} activo{{ perfilEmpresa.beneficiosPublicados === 1 ? '' : 's' }}
+              </span>
+              <span class="bdet-empresa__stat">
+                <strong>{{ perfilEmpresa.beneficiosEntregados }}</strong>
+                entregado{{ perfilEmpresa.beneficiosEntregados === 1 ? '' : 's' }}
+              </span>
+            </div>
+          </div>
+
+          <p *ngIf="perfilEmpresa.descripcion" class="bdet-empresa__desc">{{ perfilEmpresa.descripcion }}</p>
+
+          <div class="bdet-empresa__contact">
+            <a *ngIf="perfilEmpresa.sitioWeb" class="bdet-contact-item"
+               [href]="perfilEmpresa.sitioWeb.startsWith('http') ? perfilEmpresa.sitioWeb : 'https://' + perfilEmpresa.sitioWeb"
+               target="_blank" rel="noopener noreferrer">
+              <mat-icon>language</mat-icon>
+              {{ perfilEmpresa.sitioWeb }}
+              <mat-icon class="ext">open_in_new</mat-icon>
+            </a>
+            <span *ngIf="perfilEmpresa.direccion" class="bdet-contact-item">
+              <mat-icon>location_on</mat-icon>
+              {{ perfilEmpresa.direccion }}
+            </span>
+            <a *ngIf="perfilEmpresa.correoContacto" class="bdet-contact-item"
+               [href]="'mailto:' + perfilEmpresa.correoContacto">
+              <mat-icon>mail</mat-icon>
+              {{ perfilEmpresa.correoContacto }}
+            </a>
+            <span *ngIf="perfilEmpresa.telefono" class="bdet-contact-item">
+              <mat-icon>call</mat-icon>
+              {{ perfilEmpresa.telefono }}
+            </span>
           </div>
         </article>
       </section>
@@ -177,7 +276,7 @@
         <div>
           <strong>Tus datos están protegidos.</strong>
           {{ beneficio.empresa }} sólo recibirá los datos mínimos necesarios para gestionar tu solicitud.
-          <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+          <a class="link" href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Ley 1581/2012 (Habeas Data)</a>.
         </div>
       </aside>
     </ng-container>
@@ -192,8 +291,8 @@
     <nav class="footer__links">
       <a href="#soporte">Soporte</a>
       <a href="#terminos">Términos</a>
-      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
-      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf" target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>
     </nav>
   </footer>
 

@@ -1,9 +1,17 @@
 <!-- ============================================================
      Portal de Beneficios para Egresados UD · OATI
-     Pantalla de inicio de sesión
-     RF-001 (acceso egresado) · RF-004 (acceso empresa)
+     Pantalla de inicio de sesión ÚNICA (RF-001 y RF-004):
+     egresados y empresas entran por el mismo flujo WSO2 (D-5);
+     la rama se decide después del login (Estado de userRol).
      ============================================================ -->
-<div class="app">
+<!-- Splash de redirección: hay sesión vigente y se está resolviendo el perfil
+     (egresado/empresa) para enrutar — evita el "flash" de la pantalla de login. -->
+<div *ngIf="redirigiendo" class="login-splash" role="status" aria-live="polite">
+  <img src="assets/images/logo-ud-circular.png" alt="" />
+  <p>Ingresando al portal…</p>
+</div>
+
+<div class="app" *ngIf="!redirigiendo">
 
   <!-- ── Header ─────────────────────────────────────────────── -->
   <header class="header">
@@ -29,9 +37,7 @@
 
     <!-- Hero (lado editorial) -->
     <section class="hero">
-      <div class="hero__watermark" aria-hidden="true"></div>
-
-      <div class="hero__top" [class.swap]="true" [class.is-swapping]="swapping">
+      <div class="hero__top">
         <span class="hero__eyebrow">{{ cfg.eyebrow }}</span>
         <h1 class="hero__display">
           {{ cfg.displayPre }}<em>{{ cfg.displayEm }}</em>{{ cfg.displayPost }}
@@ -39,7 +45,7 @@
         <p class="hero__lede">{{ cfg.lede }}</p>
       </div>
 
-      <div class="hero__stats" [class.swap]="true" [class.is-swapping]="swapping">
+      <div class="hero__stats">
         <div class="stat" *ngFor="let s of cfg.stats">
           <span class="stat__num">{{ s.num }}</span>
           <span class="stat__label">{{ s.label }}</span>
@@ -65,32 +71,6 @@
           <div class="card__eyebrow">{{ cfg.cardEyebrow }}</div>
           <h2 class="card__title">{{ cfg.cardTitle }}</h2>
           <p class="card__subtitle">{{ cfg.cardSubtitle }}</p>
-        </div>
-
-        <!-- Selector de rol -->
-        <div class="role-tabs" role="tablist" aria-label="Selector de rol">
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="rol === 'egresado'"
-            class="role-tabs__option"
-            [class.active]="rol === 'egresado'"
-            (click)="setRol('egresado')"
-          >
-            <mat-icon>school</mat-icon>
-            Egresado
-          </button>
-          <button
-            type="button"
-            role="tab"
-            [attr.aria-selected]="rol === 'empresa'"
-            class="role-tabs__option"
-            [class.active]="rol === 'empresa'"
-            (click)="setRol('empresa')"
-          >
-            <mat-icon>domain</mat-icon>
-            Empresa aliada
-          </button>
         </div>
 
         <!-- Alert de error -->
@@ -134,7 +114,7 @@
           </p>
         </div><!-- /wso2-auth -->
 
-        <!-- Bloque de registro -->
+        <!-- Bloque de registro (único: mismo auto-registro institucional para ambos) -->
         <div class="register">
           <span class="register__text">{{ cfg.register.text }}</span>
           <a class="register__cta" [routerLink]="cfg.register.url" target="_blank" rel="noreferrer">
@@ -158,8 +138,8 @@
       <a href="#soporte">Soporte</a>
       <a href="#estado">Estado del servicio</a>
       <a href="#terminos">Términos</a>
-      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
-      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf" target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>
     </nav>
   </footer>
 

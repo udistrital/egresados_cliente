@@ -4,11 +4,12 @@
    RF-007: respuesta a solicitud (Aprobar / Rechazar / Info)
    ============================================================ */
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { Subject } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
   Empresa, SolicitudRecibida, EstadoSolicitud, HistorialEntrada, MensajeHilo,
-  ESTADOS, EMPRESA_DEMO,
+  ESTADOS, EMPRESA_VACIA,
 } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
 import { AccionRespuesta, EmpresaService } from '../../core/services/empresa.service';
@@ -28,12 +29,17 @@ interface RespuestaPanel {
 })
 export class EmpresaDashboardComponent implements OnInit, OnDestroy {
 
-  empresa: Empresa = EMPRESA_DEMO;
+  empresa: Empresa = EMPRESA_VACIA;
   solicitudes: SolicitudRecibida[] = [];
+  /** true hasta la primera bandeja real (JIT + fetch); evita mostrar "sin
+   *  solicitudes" mientras el backend aún no ha respondido. */
+  cargandoBandeja = true;
 
   menuOpen = false;
   filtro: FiltroEmpresa = 'todas';
   query = '';
+  /** Pre-filtro por beneficio (deep-link ?beneficio= desde "Mis beneficios") */
+  beneficioFiltro: string | null = null;
 
   /** Radicado de la fila con el panel de respuesta abierto */
   respuestaPanel: RespuestaPanel | null = null;
@@ -67,16 +73,30 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private autenticacion: ImplicitAutenticationService,
     private empresaSvc: EmpresaService,
+    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
+    this.beneficioFiltro = this.route.snapshot.queryParamMap.get('beneficio');
+
     this.empresaSvc.getEmpresa()
       .pipe(takeUntil(this.destroy$))
       .subscribe(empresa => (this.empresa = empresa));
 
     this.empresaSvc.getBandeja()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(solicitudes => (this.solicitudes = solicitudes));
+      .subscribe(solicitudes => {
+        this.solicitudes = solicitudes;
+        this.cargandoBandeja = false;
+      });
+
+    // Tope de gracia: si el JIT de empresa falla (correo sin proveedor en Ágora,
+    // servicio caído…), getBandeja nunca emite — soltar el loader y dejar que el
+    // estado vacío cuente la verdad.
+    timer(15000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => (this.cargandoBandeja = false));
   }
 
   ngOnDestroy(): void {
@@ -101,6 +121,7 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
   /* ── Lista filtrada ─────────────────────────────────────── */
   get solicitudesFiltradas(): SolicitudRecibida[] {
     let arr = this.solicitudes;
+    if (this.beneficioFiltro) arr = arr.filter(x => x.beneficioId === this.beneficioFiltro);
     if (this.filtro === 'pendientes')  arr = arr.filter(x => x.estado === 'pendiente');
     if (this.filtro === 'en_revision') arr = arr.filter(x => x.estado === 'revision' || x.estado === 'info');
     if (this.filtro === 'aprobadas')   arr = arr.filter(x => x.estado === 'aprobada');
@@ -115,6 +136,18 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
       );
     }
     return arr;
+  }
+
+  /** Título del beneficio pre-filtrado (se toma de cualquier solicitud suya). */
+  get beneficioFiltroTitulo(): string {
+    const s = this.solicitudes.find(x => x.beneficioId === this.beneficioFiltro);
+    return s?.beneficio ?? `beneficio #${this.beneficioFiltro}`;
+  }
+
+  quitarFiltroBeneficio(): void {
+    this.beneficioFiltro = null;
+    // Limpiar el query param para que un refresh no lo reaplique
+    this.router.navigate([], { relativeTo: this.route, queryParams: {} });
   }
 
   count(f: FiltroEmpresa): number {
@@ -241,9 +274,10 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
     this.drawerError = null;
   }
 
-  /** Solo se puede conversar mientras la solicitud está en REQUIERE_INFO (regla del MID) */
+  /** El hilo vive mientras la conversación está abierta: REQUIERE_INFO (el
+   *  egresado debe responder) o EN_REVISION (nos respondió) — regla del MID. */
   get puedeMensajear(): boolean {
-    return this.drawer?.estado === 'info';
+    return this.drawer?.estado === 'info' || this.drawer?.estado === 'revision';
   }
 
   enviarMensaje(): void {

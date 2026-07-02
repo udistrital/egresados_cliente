@@ -162,6 +162,16 @@
         </button>
       </div>
 
+      <!-- Pre-filtro por beneficio (deep-link desde "Mis beneficios") -->
+      <div *ngIf="beneficioFiltro" class="filtro-beneficio" role="status">
+        <mat-icon style="font-size:16px;height:16px;width:16px">filter_alt</mat-icon>
+        <span>Mostrando solo solicitudes de: <strong>{{ beneficioFiltroTitulo }}</strong></span>
+        <button type="button" class="filtro-beneficio__clear" (click)="quitarFiltroBeneficio()">
+          <mat-icon style="font-size:14px;height:14px;width:14px">close</mat-icon>
+          Quitar filtro
+        </button>
+      </div>
+
       <!-- Tabla -->
       <div class="solicitudes__list">
 
@@ -175,8 +185,24 @@
           <span>Acciones</span>
         </div>
 
-        <!-- Estado vacío -->
-        <div *ngIf="solicitudesFiltradas.length === 0" class="empty-state">
+        <!-- Cargando (JIT + bandeja en vuelo): skeleton con la forma real de las
+             filas — nunca mostrar "sin solicitudes" antes de que el backend
+             haya respondido de verdad -->
+        <div *ngIf="cargandoBandeja" class="bandeja-skeleton" role="status" aria-live="polite">
+          <span class="sr-only">Cargando solicitudes…</span>
+          <div class="solicitud-row emp-solicitud-row sk-row"
+               *ngFor="let i of [1, 2, 3]" aria-hidden="true">
+            <span class="sk sk--pill"></span>
+            <span class="sk sk--text"></span>
+            <span class="sk sk--text"></span>
+            <span class="sk sk--badge"></span>
+            <span class="sk sk--text sk--corto"></span>
+            <span class="sk sk--btn"></span>
+          </div>
+        </div>
+
+        <!-- Estado vacío (solo cuando ya se consultó el backend) -->
+        <div *ngIf="!cargandoBandeja && solicitudesFiltradas.length === 0" class="empty-state">
           <mat-icon>inbox</mat-icon>
           <h3>Sin solicitudes con este filtro</h3>
           <p>Prueba cambiar el filtro o ampliar la búsqueda.</p>
@@ -328,7 +354,7 @@
       <div>
         <strong>Privacidad de los egresados.</strong>
         Solo accedes a los datos mínimos necesarios (nombre, programa, facultad, correo institucional)
-        conforme a la <a class="link" href="#habeas-data">Ley 1581/2012</a>.
+        conforme a la <a class="link" href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Ley 1581/2012</a>.
         Cada respuesta queda registrada en bitácora institucional.
       </div>
     </aside>
@@ -343,8 +369,8 @@
     <nav class="footer__links">
       <a href="#soporte">Soporte</a>
       <a href="#terminos">Términos</a>
-      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
-      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf" target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>
     </nav>
   </footer>
 
@@ -450,7 +476,7 @@
             </button>
           </div>
           <p *ngIf="!puedeMensajear && mensajesDrawer.length > 0" class="drawer__muted">
-            El hilo está cerrado: la solicitud ya no está en «Requiere información».
+            El hilo está cerrado: la solicitud ya fue resuelta.
           </p>
         </section>
 

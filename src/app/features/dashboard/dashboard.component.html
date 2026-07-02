@@ -141,7 +141,8 @@
               <span class="solicitud-compact__meta">{{ s.empresa }} · {{ s.actualizada }}</span>
             </div>
             <button class="row-action" type="button" title="Ver detalle"
-                    aria-label="Ver detalle de solicitud">
+                    aria-label="Ver detalle de solicitud"
+                    (click)="verDetalle(s)">
               <mat-icon style="font-size:15px;height:15px;width:15px">chevron_right</mat-icon>
             </button>
           </li>
@@ -207,7 +208,7 @@
       <div>
         <strong>Tus datos están protegidos.</strong>
         Las empresas aliadas sólo acceden a los datos mínimos para gestionar tu solicitud.
-        <a class="link" href="#habeas-data">Ley 1581/2012 (Habeas Data)</a>.
+        <a class="link" href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Ley 1581/2012 (Habeas Data)</a>.
       </div>
     </aside>
 
@@ -221,7 +222,7 @@
       <a href="#soporte">Soporte</a>
       <a href="#estado">Estado del servicio</a>
       <a href="#terminos">Términos</a>
-      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
     </nav>
   </footer>
 

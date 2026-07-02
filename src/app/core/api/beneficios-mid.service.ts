@@ -10,8 +10,8 @@ import { Observable, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
-  ApiResponse, BandejaItemDto, BeneficioDto, HistorialDto, MensajeDto,
-  ParametroDto, ResumenDto, SolicitudDto,
+  ApiResponse, BandejaItemDto, BeneficioDto, HistorialDto, MensajeDto, ParametroDto,
+  PerfilEmpresaDto, ProvisionEgresadoDto, ProvisionEmpresaDto, ResumenDto, SolicitudDto,
 } from './api.types';
 
 @Injectable({ providedIn: 'root' })
@@ -46,6 +46,27 @@ export class BeneficiosMidService {
   /** GET /v1/beneficios/:id — RF-003 detalle */
   getBeneficio(id: number): Observable<BeneficioDto> {
     return this.body(this.http.get<ApiResponse<BeneficioDto>>(`${this.base}/beneficios/${id}`));
+  }
+
+  /* ── Identidad local (JIT provisioning) ── */
+
+  /**
+   * POST /v1/egresados/provision — alta idempotente de usuario/egresado locales.
+   * SIN body: el MID deriva la identidad del token (OIDC userinfo → userRol).
+   */
+  provisionarEgresado(): Observable<ProvisionEgresadoDto> {
+    return this.body(this.http.post<ApiResponse<ProvisionEgresadoDto>>(
+      `${this.base}/egresados/provision`, {}));
+  }
+
+  /**
+   * POST /v1/empresas/provision — JIT de empresa (C-2b/c): resuelve los proveedores
+   * del correo del token en Ágora y da de alta usuario/empresa/usuario_empresa.
+   * SIN body: el MID deriva la identidad del token vía OIDC userinfo.
+   */
+  provisionarEmpresa(): Observable<ProvisionEmpresaDto> {
+    return this.body(this.http.post<ApiResponse<ProvisionEmpresaDto>>(
+      `${this.base}/empresas/provision`, {}));
   }
 
   /* ── Solicitudes (egresado) ── */
@@ -93,6 +114,11 @@ export class BeneficiosMidService {
 
   /* ── Bandeja y acciones de empresa ── */
 
+  /** GET /v1/empresas/:id — perfil público de la empresa (detalle de beneficio) */
+  getPerfilEmpresa(id: number): Observable<PerfilEmpresaDto> {
+    return this.body(this.http.get<ApiResponse<PerfilEmpresaDto>>(`${this.base}/empresas/${id}`));
+  }
+
   /** GET /v1/empresas/:id/solicitudes — RF-006 bandeja (datos mínimos, RNF-002b) */
   getBandejaEmpresa(empresaId: number): Observable<BandejaItemDto[]> {
     return this.body(this.http.get<ApiResponse<BandejaItemDto[]>>(
@@ -111,6 +137,12 @@ export class BeneficiosMidService {
   /** POST /v1/empresas — RF-004 registro/JIT de empresa */
   registrarEmpresa(body: Record<string, unknown>): Observable<unknown> {
     return this.body(this.http.post<ApiResponse<unknown>>(`${this.base}/empresas`, body));
+  }
+
+  /** GET /v1/empresas/:id/beneficios — gestión: TODOS los beneficios del dueño */
+  getBeneficiosEmpresa(empresaId: number): Observable<BeneficioDto[]> {
+    return this.body(this.http.get<ApiResponse<BeneficioDto[]>>(
+      `${this.base}/empresas/${empresaId}/beneficios`));
   }
 
   /** POST /v1/empresas/:id/beneficios — RF-005 publicar (empresa APROBADA, RN-008b) */

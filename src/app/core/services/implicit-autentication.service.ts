@@ -38,27 +38,28 @@ export class ImplicitAutenticationService {
     });
   }
 
+  /**
+   * Decodifica el payload de un JWT. Los JWT usan base64url (RFC 7515): alfabeto
+   * con '-' y '_' y sin padding — atob() crudo EXPLOTA con esos caracteres y el
+   * catch descartaba la sesión entera (el usuario se autenticaba en WSO2 y volvía
+   * al login "sin razón"). Se normaliza a base64 estándar + padding, y se decodifica
+   * UTF-8 (claims con tildes/ñ).
+   */
+  private jwtPayload(jwt: string): any {
+    const b64url = jwt.split('.')[1];
+    const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    const bytes = atob(padded);
+    try {
+      // Decodificación UTF-8 (nombres con acentos en los claims)
+      return JSON.parse(decodeURIComponent(escape(bytes)));
+    } catch {
+      return JSON.parse(bytes);
+    }
+  }
+
   init(entorno: any): any {
     this.environment = entorno;
-
-    if (environment.DEMO_MODE) {
-      const isEmpresa = environment.DEMO_ROL === 'empresa';
-      this.userSubject.next({
-        user: {
-          email: isEmpresa ? 'demo.empresa@aliada.co' : 'demo.egresado@udistrital.edu.co',
-          role: [environment.DEMO_ROL],
-        },
-        userService: {
-          nombre: isEmpresa ? 'TechCorp S.A.S.' : 'María Martínez',
-          PrimerNombre: isEmpresa ? 'TechCorp' : 'María',
-          PrimerApellido: isEmpresa ? 'S.A.S.' : 'Martínez',
-          email: isEmpresa ? 'demo.empresa@aliada.co' : 'mmartinez@udistrital.edu.co',
-          documento: isEmpresa ? '900123456' : '1026287543',
-          role: [environment.DEMO_ROL],
-        },
-      });
-      return;
-    }
 
     if (window.localStorage.getItem('id_token') === null) {
       const params: any = {};
@@ -71,8 +72,7 @@ export class ImplicitAutenticationService {
 
       if (!!params['id_token']) {
         try {
-          const id_token_array = (params['id_token']).split('.');
-          const payload = JSON.parse(atob(id_token_array[1]));
+          const payload = this.jwtPayload(params['id_token']);
           window.localStorage.setItem('access_token', params['access_token']);
           window.localStorage.setItem('expires_in', params['expires_in']);
           window.localStorage.setItem('state', params['state']);
@@ -84,21 +84,34 @@ export class ImplicitAutenticationService {
             }),
           };
           this.updateAuth(payload);
-        } catch {
+        } catch (e) {
           // id_token ilegible en el hash: descartar y dejar la sesión limpia
+          console.warn('[auth] id_token del callback ilegible — se descarta la sesión', e);
           this.clearStorage();
         }
       } else {
+        // Rama muda histórica: si WSO2 devuelve el callback SIN id_token (p. ej.
+        // un error OAuth en el fragmento), aquí se descartaba la sesión sin dejar
+        // rastro y el usuario "rebotaba al login sin razón". Registrar SIEMPRE
+        // qué llegó (solo claves y campos de error, nunca valores de tokens).
+        if (Object.keys(params).length > 0) {
+          console.warn(
+            '[auth] callback de WSO2 sin id_token — se descarta la sesión.',
+            'claves recibidas:', Object.keys(params).join(', '),
+            'error:', params['error'] ?? '(ninguno)',
+            'descripción:', params['error_description'] ?? '(ninguna)',
+          );
+        }
         this.clearStorage();
       }
     } else {
       try {
-        const id_token = window.localStorage.getItem('id_token')!.split('.');
-        const payload = JSON.parse(atob(id_token[1]));
+        const payload = this.jwtPayload(window.localStorage.getItem('id_token')!);
         this.updateAuth(payload);
-      } catch {
+      } catch (e) {
         // Token corrupto/truncado de sesiones anteriores: si no se descarta,
         // el constructor revienta y la app entera deja de responder.
+        console.warn('[auth] id_token almacenado ilegible — se descarta la sesión', e);
         this.clearStorage();
       }
     }
@@ -159,8 +172,7 @@ export class ImplicitAutenticationService {
   }
 
   public getPayload(): any {
-    const idToken = window.localStorage.getItem('id_token')!.split('.');
-    return JSON.parse(atob(idToken[1]));
+    return this.jwtPayload(window.localStorage.getItem('id_token')!);
   }
 
   public getRole(): Promise<string[]> {
@@ -218,6 +230,11 @@ export class ImplicitAutenticationService {
   }
 
   public clearUrl(): void {
+    // Solo limpiar cuando el hash trae la respuesta OAuth de WSO2 (id_token=…).
+    // La app usa hash routing (useHash): el hash normal es la RUTA Angular
+    // (#/empresa/dashboard, #/catalogo…) y borrarlo aquí hacía que cualquier
+    // refresh perdiera la ruta y cayera al login.
+    if (!window.location.hash.includes('id_token=')) return;
     const clean_uri = window.location.origin + window.location.pathname;
     window.history.replaceState({}, document.title, clean_uri);
   }
@@ -230,6 +247,11 @@ export class ImplicitAutenticationService {
     if (!this.params.state) {
       this.params.state = this.generateState();
     }
+    // OJO: NO agregar prompt=login aquí. Se intentó (2026-07-02) para forzar el
+    // formulario de credenciales con SSO activo, pero el WSO2 de la UD acepta las
+    // credenciales y devuelve el callback SIN id_token → sesión descartada y el
+    // usuario rebota al login. Para cambiar de cuenta: "Cerrar sesión" (mata el
+    // SSO en WSO2) y luego iniciar sesión. Confirmar soporte de prompt con OATI.
     let url = this.params.AUTORIZATION_URL + '?' +
       'client_id=' + encodeURIComponent(this.params.CLIENTE_ID) + '&' +
       'redirect_uri=' + encodeURIComponent(this.params.REDIRECT_URL) + '&' +

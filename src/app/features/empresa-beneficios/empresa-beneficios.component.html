@@ -129,7 +129,7 @@
                 required
               >
                 <option value="" disabled>Seleccionar…</option>
-                <option *ngFor="let c of CATEGORIAS" [value]="c.value">{{ c.label }}</option>
+                <option *ngFor="let c of categorias" [value]="c.value">{{ c.label }}</option>
               </select>
             </div>
 
@@ -204,17 +204,71 @@
 
     <!-- ── Lista de beneficios ────────────────────────────── -->
 
-    <!-- Estado vacío -->
-    <div *ngIf="beneficios.length === 0" class="empty-state">
+    <!-- Barra de filtros / orden -->
+    <div *ngIf="!cargandoBeneficios && beneficios.length > 0" class="mgmt-filters">
+      <div class="mgmt-filters__search">
+        <mat-icon style="font-size:18px;height:18px;width:18px">search</mat-icon>
+        <input
+          type="search"
+          placeholder="Buscar por título o categoría…"
+          [(ngModel)]="query"
+          name="queryBeneficios"
+        />
+      </div>
+
+      <div class="mgmt-filters__group">
+        <label class="mgmt-filters__label">Estado</label>
+        <select class="mgmt-filters__select" [(ngModel)]="filtroEstado" name="filtroEstado">
+          <option *ngFor="let f of FILTROS_ESTADO" [value]="f.value">{{ f.label }}</option>
+        </select>
+      </div>
+
+      <div class="mgmt-filters__group">
+        <label class="mgmt-filters__label">Ordenar</label>
+        <select class="mgmt-filters__select" [(ngModel)]="orden" name="ordenBeneficios">
+          <option *ngFor="let o of ORDEN_OPTS" [value]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+
+      <div class="mgmt-filters__count">
+        <strong>{{ beneficiosFiltrados.length }}</strong> de {{ beneficios.length }}
+      </div>
+    </div>
+
+    <!-- Cargando (JIT + fetch en vuelo): cards fantasma -->
+    <section *ngIf="cargandoBeneficios" class="benef-mgmt-list" role="status" aria-live="polite">
+      <span class="sr-only">Cargando beneficios…</span>
+      <article class="benef-mgmt-card sk-row" *ngFor="let i of [1, 2, 3]" aria-hidden="true">
+        <div class="benef-mgmt-card__head">
+          <span class="sk sk--badge"></span>
+          <span class="sk sk--badge"></span>
+        </div>
+        <span class="sk sk--pill" style="width:70%"></span>
+        <span class="sk sk--text" style="width:95%"></span>
+        <span class="sk sk--text" style="width:60%"></span>
+        <span class="sk sk--btn" style="margin-top:auto"></span>
+      </article>
+    </section>
+
+    <!-- Estado vacío (solo cuando ya se consultó el backend) -->
+    <div *ngIf="!cargandoBeneficios && beneficios.length === 0" class="empty-state">
       <mat-icon>inventory_2</mat-icon>
       <h3>Aún no has publicado beneficios</h3>
       <p>Usa el botón "Publicar beneficio" para agregar el primero.</p>
     </div>
 
+    <!-- Sin resultados con el filtro actual -->
+    <div *ngIf="!cargandoBeneficios && beneficios.length > 0 && beneficiosFiltrados.length === 0"
+         class="empty-state">
+      <mat-icon>search</mat-icon>
+      <h3>Sin beneficios con ese filtro</h3>
+      <p>Prueba otro estado o quita la palabra clave.</p>
+    </div>
+
     <!-- Cards de beneficios -->
-    <section *ngIf="beneficios.length > 0" class="benef-mgmt-list">
+    <section *ngIf="beneficiosFiltrados.length > 0" class="benef-mgmt-list">
       <article
-        *ngFor="let b of beneficios"
+        *ngFor="let b of beneficiosFiltrados"
         class="benef-mgmt-card"
         [class.is-agotado]="b.estadoPublicacion === 'agotado'"
         [class.is-vencido]="b.estadoPublicacion === 'vencido'"
@@ -281,6 +335,7 @@
         <footer class="benef-mgmt-card__foot">
           <a class="btn btn--ghost benef-mgmt-card__detail"
              routerLink="/empresa/dashboard"
+             [queryParams]="{ beneficio: b.id }"
              style="width:auto;padding:0 14px;height:34px;font-size:13px">
             <mat-icon style="font-size:15px;height:15px;width:15px">inbox</mat-icon>
             Ver solicitudes
@@ -301,7 +356,7 @@
         <strong>Publicación responsable.</strong>
         Los beneficios publicados son visibles para todos los egresados registrados.
         Asegúrate de que los datos de cupos y vigencia sean correctos antes de publicar.
-        <a class="link" href="#acuerdo">Acuerdo 004 de 2024 CSU</a>.
+        <a class="link" href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf" target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>.
       </div>
     </aside>
 
@@ -315,8 +370,8 @@
     <nav class="footer__links">
       <a href="#soporte">Soporte</a>
       <a href="#terminos">Términos</a>
-      <a href="#habeas-data">Tratamiento de datos · Ley 1581/2012</a>
-      <a href="#acuerdo">Acuerdo 004 de 2024 CSU</a>
+      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
+      <a href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf" target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>
     </nav>
   </footer>
 

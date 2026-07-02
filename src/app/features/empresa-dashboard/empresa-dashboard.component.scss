@@ -482,3 +482,29 @@
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Pre-filtro por beneficio (deep-link desde Mis beneficios) ── */
+.filtro-beneficio {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-bottom: var(--space-3); padding: 8px 14px;
+  background: rgba(20, 56, 115, 0.06);
+  border: 1px solid rgba(20, 56, 115, 0.18);
+  border-radius: var(--radius-md);
+  font-size: 13px; color: var(--fg-2);
+
+  mat-icon { color: var(--primary-500); flex-shrink: 0; }
+  strong { color: var(--fg-1); }
+}
+
+.filtro-beneficio__clear {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: auto; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-pill);
+  background: var(--surface); font-family: var(--font-sans);
+  font-size: 12px; font-weight: var(--weight-medium); color: var(--fg-2);
+  cursor: pointer; white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover { border-color: var(--primary-300); color: var(--fg-1); }
+}
+

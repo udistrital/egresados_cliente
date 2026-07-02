@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Solicitud, EstadoSolicitud, ESTADOS, Beneficio } from '../../shared/oati.types';
@@ -42,7 +43,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private sesionSvc: UsuarioSesionService,
     private beneficiosSvc: BeneficiosService,
     private solicitudesSvc: SolicitudesService,
+    private router: Router,
   ) {}
+
+  /** Flecha "Ver detalle": abre /solicitudes con el drawer de esa solicitud. */
+  verDetalle(s: Solicitud): void {
+    this.router.navigate(['/solicitudes'], { queryParams: { radicado: s.radicado } });
+  }
 
   ngOnInit(): void {
     this.sesionSvc.sesion$

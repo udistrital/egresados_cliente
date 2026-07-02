@@ -70,6 +70,27 @@ export interface BeneficioDto {
   imagen_url?: string;
   fecha_publicacion?: string;
   fecha_creacion?: string;
+  /** Social proof que anexa el MID en GET /v1/beneficios/:id */
+  total_solicitudes?: number;
+  /** Solo en GET /v1/empresas/:id/beneficios (vista de gestión del dueño) */
+  estado_beneficio?: string;
+  solicitudes_pendientes?: number;
+}
+
+/** Respuesta de GET /v1/empresas/:id — perfil público (whitelist RNF-002b) */
+export interface PerfilEmpresaDto {
+  empresa_id: number;
+  razon_social: string;
+  estado_empresa_id: number;
+  correo_contacto?: string;
+  sitio_web?: string;
+  telefono?: string;
+  direccion?: string;
+  descripcion?: string;
+  /** Fecha de registro como proveedor UD en Ágora (YYYY-MM-DD) */
+  aliado_desde?: string;
+  beneficios_publicados: number;
+  beneficios_entregados: number;
 }
 
 /**
@@ -130,4 +151,31 @@ export interface ResumenDto {
   aprobadas: number;
   rechazadas: number;
   canceladas: number;
+}
+
+/** Respuesta de POST /v1/egresados/provision (JIT del egresado; identidad del token) */
+export interface ProvisionEgresadoDto {
+  usuario_id: number;
+  egresado_id: number;
+  codigo_institucional: string;
+  nombre?: string;
+}
+
+/** Cada empresa vinculada en el JIT de empresa (proveedor en forma pública) */
+export interface EmpresaProvisionadaDto {
+  empresa_id: number;
+  usuario_empresa_id: number;
+  proveedor?: {
+    agora_id_externo: number;
+    razon_social: string;
+    tipo_persona: string;
+    correo: string;
+  };
+}
+
+/** Respuesta de POST /v1/empresas/provision (JIT de empresa; identidad del token).
+ *  `empresas` puede traer >1 (correo 1:N con proveedor — caso multiempresa). */
+export interface ProvisionEmpresaDto {
+  usuario_id: number;
+  empresas: EmpresaProvisionadaDto[];
 }

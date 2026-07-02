@@ -1,25 +1,25 @@
 /* ============================================================
-   Fachada de solicitudes del egresado (RF-003/008/013).
-   DEMO_MODE=true  → delega en SolicitudesDemoService (estado en
-                     memoria compartido entre vistas).
-   DEMO_MODE=false → MID real. Mantiene una caché local para que
-   las lecturas síncronas que usan los templates (yaSolicitado,
-   limiteAlcanzado, contadores) sigan funcionando igual.
+   Fachada de solicitudes del egresado (RF-003/008/013) contra el
+   MID real. Mantiene una caché local para que las lecturas
+   síncronas que usan los templates (yaSolicitado, limiteAlcanzado,
+   contadores) sigan funcionando igual.
    ============================================================ */
 import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { catchError, distinctUntilChanged, filter, map, switchMap, take, tap } from 'rxjs/operators';
 import {
   Beneficio, ESTADOS, HistorialEntrada, MensajeHilo, Solicitud,
 } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
 import { mapMensaje, mapSolicitud } from '../api/mappers';
 import { BeneficiosService } from './beneficios.service';
-import { ResultadoSolicitud, SolicitudesDemoService } from './solicitudes-demo.service';
 import { UsuarioSesionService } from './usuario-sesion.service';
 
-export { ResultadoSolicitud } from './solicitudes-demo.service';
+export interface ResultadoSolicitud {
+  ok: boolean;
+  solicitud?: Solicitud;
+  error?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudesService {
@@ -32,47 +32,43 @@ export class SolicitudesService {
 
   constructor(
     private api: BeneficiosMidService,
-    private demo: SolicitudesDemoService,
     private beneficiosSvc: BeneficiosService,
     private sesionSvc: UsuarioSesionService,
   ) {}
 
   /* ── Carga y lecturas síncronas ────────────────────────────── */
 
-  /** RF-008: carga (o recarga) mis solicitudes con su estado vigente (C-4b). */
+  /** RF-008: carga (o recarga) mis solicitudes con su estado vigente (C-4b).
+   *  Reactivo a la sesión y NO emite mientras el JIT provisioning no resuelva el
+   *  egresadoId: emitir [] en esa fase hacía que las vistas mostraran "sin
+   *  solicitudes" (información errónea) — muestran skeleton hasta la primera
+   *  emisión real. */
   cargar(): Observable<Solicitud[]> {
-    if (environment.DEMO_MODE) {
-      this.cache = this.demo.getSolicitudes();
-      return of(this.cache);
-    }
-    const egresadoId = this.sesionSvc.sesion.egresadoId;
-    if (egresadoId == null) {
-      // JIT provisioning pendiente en el MID: sin id local no hay consulta posible
-      this.cache = [];
-      return of(this.cache);
-    }
-    return this.beneficiosSvc.categorias$.pipe(
-      switchMap(cats => this.api.getSolicitudesEgresado(egresadoId).pipe(
-        map(dtos => (dtos ?? []).map(d => mapSolicitud(d, cats))),
+    return this.sesionSvc.sesion$.pipe(
+      map(s => s.egresadoId),
+      distinctUntilChanged(),
+      filter((egresadoId): egresadoId is number => egresadoId != null),
+      switchMap(egresadoId => this.beneficiosSvc.categorias$.pipe(
+        switchMap(cats => this.api.getSolicitudesEgresado(egresadoId).pipe(
+          map(dtos => (dtos ?? []).map(d => mapSolicitud(d, cats))),
+        )),
       )),
       tap(solicitudes => (this.cache = solicitudes)),
     );
   }
 
   getSolicitudes(): Solicitud[] {
-    return environment.DEMO_MODE ? this.demo.getSolicitudes() : this.cache;
+    return this.cache;
   }
 
   /** RN-007: ya hay una solicitud no-final para el beneficio. */
   yaSolicitado(beneficioId: string): boolean {
-    if (environment.DEMO_MODE) return this.demo.yaSolicitado(beneficioId);
     return this.cache.some(
       s => s.beneficioId === beneficioId && !ESTADOS[s.estado]?.isFinal,
     );
   }
 
   activasCount(): number {
-    if (environment.DEMO_MODE) return this.demo.activasCount();
     return this.cache.filter(s => ESTADOS[s.estado]?.isActive).length;
   }
 
@@ -85,9 +81,6 @@ export class SolicitudesService {
 
   /** RF-003: crear solicitud. El MID aplica RN-007/010/002b y genera el radicado. */
   crearSolicitud(b: Beneficio, datosComplementarios?: string): Observable<ResultadoSolicitud> {
-    if (environment.DEMO_MODE) {
-      return of(this.demo.crearSolicitud(b, datosComplementarios));
-    }
     const { egresadoId, usuarioId } = this.sesionSvc.sesion;
     if (egresadoId == null) {
       return of({ ok: false, error: 'Tu perfil de egresado aún no está habilitado en el módulo.' });
@@ -99,8 +92,10 @@ export class SolicitudesService {
       usuario_id: usuarioId ?? undefined,
     }).pipe(
       // El MID devuelve solo { id }: recargar para obtener radicado y estado.
-      // TODO backend: que POST /v1/solicitudes retorne también el radicado.
+      // take(1): cargar() es reactivo a la sesión y no completa; aquí basta la
+      // primera lista fresca (el egresadoId ya está resuelto en este punto).
       switchMap(res => this.cargar().pipe(
+        take(1),
         map(solicitudes => {
           const creada = solicitudes.find(s => s.id === res.id);
           return creada
@@ -114,20 +109,14 @@ export class SolicitudesService {
 
   /** RF-008 / RN-005: cancelar (solo PENDIENTE o REQUIERE_INFO). Devuelve la lista actualizada. */
   cancelar(s: Solicitud): Observable<Solicitud[]> {
-    if (environment.DEMO_MODE) {
-      this.demo.cancelar(s.radicado);
-      this.cache = this.demo.getSolicitudes();
-      return of(this.cache);
-    }
     if (s.id == null) return throwError(() => new Error('La solicitud no tiene id de backend'));
     const usuarioId = this.sesionSvc.sesion.usuarioId ?? undefined;
-    return this.api.cancelarSolicitud(s.id, usuarioId).pipe(switchMap(() => this.cargar()));
+    return this.api.cancelarSolicitud(s.id, usuarioId).pipe(switchMap(() => this.cargar().pipe(take(1))));
   }
 
   /* ── Bitácora y mensajes (drawer de detalle) ───────────────── */
 
   getHistorial(s: Solicitud): Observable<HistorialEntrada[]> {
-    if (environment.DEMO_MODE) return of(this.demo.getHistorial(s.radicado));
     if (s.id == null) return of([]);
     // El MID aún no expone /solicitudes/:id/historial (ver BeneficiosMidService):
     // degradar a vacío hasta que se agregue al retomar el backend.
@@ -138,7 +127,6 @@ export class SolicitudesService {
   }
 
   getMensajes(s: Solicitud): Observable<MensajeHilo[]> {
-    if (environment.DEMO_MODE) return of(this.demo.getMensajes(s.radicado));
     if (s.id == null) return of([]);
     const propio = this.sesionSvc.sesion.usuarioId;
     return this.api.getMensajes(s.id).pipe(
@@ -150,10 +138,6 @@ export class SolicitudesService {
 
   /** RF-007: enviar mensaje (el MID solo lo acepta en REQUIERE_INFO). */
   enviarMensaje(s: Solicitud, nombre: string, texto: string): Observable<MensajeHilo[]> {
-    if (environment.DEMO_MODE) {
-      this.demo.enviarMensaje(s.radicado, nombre, texto);
-      return of(this.demo.getMensajes(s.radicado));
-    }
     if (s.id == null) return throwError(() => new Error('La solicitud no tiene id de backend'));
     const usuarioId = this.sesionSvc.sesion.usuarioId;
     if (usuarioId == null) return throwError(() => new Error('Sesión sin usuario local (JIT pendiente)'));
