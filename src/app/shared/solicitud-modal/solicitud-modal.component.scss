@@ -164,3 +164,7 @@
 .smodal__radicado-hint { font-size: 12px; color: var(--fg-3); }
 
 .smodal__foot--exito { justify-content: center; width: 100%; }
+
+/* La lista de documentos requeridos (.doc-list/.doc-item/...) es compartida con
+   el drawer de "mis solicitudes" y el de la bandeja de empresa: estilos
+   globales en src/styles.scss. */

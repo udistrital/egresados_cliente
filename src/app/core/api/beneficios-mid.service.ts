@@ -10,7 +10,8 @@ import { Observable, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
-  ApiResponse, BandejaItemDto, BeneficioDto, HistorialDto, MensajeDto, ParametroDto,
+  ApiResponse, ArchivoDocumentoDto, BandejaItemDto, BeneficioDto, ComprobanteSolicitudDto,
+  DocumentoRequeridoDto, DocumentoSolicitudDto, HistorialDto, MensajeDto, ParametroDto,
   PerfilEmpresaDto, ProvisionEgresadoDto, ProvisionEmpresaDto, ResumenDto, SolicitudDto,
 } from './api.types';
 
@@ -125,13 +126,21 @@ export class BeneficiosMidService {
       `${this.base}/empresas/${empresaId}/solicitudes`));
   }
 
-  /** PUT /v1/solicitudes/:id/responder — RF-007 (RN-003/004/005) */
+  /** PUT /v1/solicitudes/:id/responder — RF-007 (RN-003/004/005).
+   *  `comprobante` es OPCIONAL y solo válido junto a estado_nuevo=APROBADA (el MID lo rechaza si no). */
   responderSolicitud(id: number, body: {
     estado_nuevo: 'APROBADA' | 'RECHAZADA' | 'REQUIERE_INFO';
     justificacion?: string; usuario_id?: number;
+    comprobante?: { nombre_archivo: string; file: string };
   }): Observable<unknown> {
     return this.body(this.http.put<ApiResponse<unknown>>(
       `${this.base}/solicitudes/${id}/responder`, body));
+  }
+
+  /** GET /v1/solicitudes/:id/comprobante — comprobante OPCIONAL adjuntado por la empresa al aprobar */
+  getComprobanteSolicitud(id: number): Observable<ComprobanteSolicitudDto> {
+    return this.body(this.http.get<ApiResponse<ComprobanteSolicitudDto>>(
+      `${this.base}/solicitudes/${id}/comprobante`));
   }
 
   /** POST /v1/empresas — RF-004 registro/JIT de empresa */
@@ -154,6 +163,46 @@ export class BeneficiosMidService {
   /** PUT /v1/beneficios/:id — RF-005 editar */
   editarBeneficio(id: number, body: Record<string, unknown>): Observable<unknown> {
     return this.body(this.http.put<ApiResponse<unknown>>(`${this.base}/beneficios/${id}`, body));
+  }
+
+  /* ── Documentos requeridos / subidos (gestor documental, vía MID) ── */
+
+  /** GET /v1/beneficios/:id/documentos-requeridos — documentos que exige la empresa */
+  getDocumentosRequeridos(beneficioId: number): Observable<DocumentoRequeridoDto[]> {
+    return this.body(this.http.get<ApiResponse<DocumentoRequeridoDto[]>>(
+      `${this.base}/beneficios/${beneficioId}/documentos-requeridos`));
+  }
+
+  /** GET /v1/solicitudes/:id/documentos — requeridos vs. subidos (egresado y empresa) */
+  getDocumentosSolicitud(solicitudId: number): Observable<DocumentoSolicitudDto[]> {
+    return this.body(this.http.get<ApiResponse<DocumentoSolicitudDto[]>>(
+      `${this.base}/solicitudes/${solicitudId}/documentos`));
+  }
+
+  /** POST /v1/solicitudes/:id/documentos — el egresado sube/reemplaza un PDF (solo solicitud en curso) */
+  subirDocumentoSolicitud(solicitudId: number, body: {
+    documento_requerido_id: number; nombre_archivo: string; file: string;
+  }): Observable<unknown> {
+    return this.body(this.http.post<ApiResponse<unknown>>(
+      `${this.base}/solicitudes/${solicitudId}/documentos`, body));
+  }
+
+  /** DELETE /v1/solicitudes/:id/documentos/:doc_id — el egresado quita un documento */
+  eliminarDocumentoSolicitud(solicitudId: number, docId: number): Observable<unknown> {
+    return this.body(this.http.delete<ApiResponse<unknown>>(
+      `${this.base}/solicitudes/${solicitudId}/documentos/${docId}`));
+  }
+
+  /** PUT /v1/documentos/:doc_id/comentario — la empresa comenta un documento (campo único) */
+  comentarDocumento(docId: number, comentario: string): Observable<unknown> {
+    return this.body(this.http.put<ApiResponse<unknown>>(
+      `${this.base}/documentos/${docId}/comentario`, { comentario }));
+  }
+
+  /** GET /v1/documentos/:doc_id/archivo — ver/descargar (proxy de solo lectura al gestor documental) */
+  getArchivoDocumento(docId: number): Observable<ArchivoDocumentoDto> {
+    return this.body(this.http.get<ApiResponse<ArchivoDocumentoDto>>(
+      `${this.base}/documentos/${docId}/archivo`));
   }
 
   /* ── Catálogos de parámetros (read-only) ── */

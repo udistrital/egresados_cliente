@@ -111,6 +111,35 @@
 
 .pub-form__full { grid-column: 1 / -1; }
 
+.doc-req-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+
+  .field-group { flex: 1; min-width: 0; }
+
+  @media (max-width: 700px) { flex-wrap: wrap; }
+}
+
+.doc-req-row__remove {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover { background: var(--surface-2); color: var(--danger-accent); border-color: var(--danger-main); }
+}
+
 .field-group {
   display: flex;
   flex-direction: column;

@@ -8,11 +8,13 @@ import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, distinctUntilChanged, filter, map, switchMap, take } from 'rxjs/operators';
 import {
-  BeneficioEmpresa, Empresa, EstadoSolicitud,
+  BeneficioEmpresa, DocumentoSolicitudItem, Empresa, EstadoSolicitud,
   HistorialEntrada, MensajeHilo, SolicitudRecibida,
 } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
-import { ESTADO_TO_CODIGO, mapBeneficioEmpresa, mapMensaje, mapSolicitudRecibida } from '../api/mappers';
+import {
+  ESTADO_TO_CODIGO, mapBeneficioEmpresa, mapDocumentoSolicitud, mapMensaje, mapSolicitudRecibida,
+} from '../api/mappers';
 import { BeneficiosService } from './beneficios.service';
 import { UsuarioSesionService } from './usuario-sesion.service';
 
@@ -27,6 +29,8 @@ export interface FormPublicarBeneficio {
   cuposIniciales: number | null;
   vigenciaHasta: string;
   resumen: string;
+  /** Documentos que se le exigirán al egresado al postularse (opcional, RF-005-doc) */
+  documentosRequeridos: { nombre: string; descripcion: string }[];
 }
 
 const ACCION_A_ESTADO: Record<AccionRespuesta, EstadoSolicitud> = {
@@ -80,9 +84,12 @@ export class EmpresaService {
 
   /**
    * RF-007: responder una solicitud (RN-003/004/005 las valida el MID).
+   * `comprobante` es OPCIONAL y solo tiene efecto al aprobar (el MID rechaza el
+   * body si se manda junto a rechazar/pedir info).
    * Devuelve la bandeja actualizada.
    */
-  responder(s: SolicitudRecibida, accion: AccionRespuesta, nota: string):
+  responder(s: SolicitudRecibida, accion: AccionRespuesta, nota: string,
+    comprobante?: { nombreArchivo: string; fileBase64: string }):
     Observable<SolicitudRecibida[]> {
     if (s.id == null) return throwError(() => new Error('La solicitud no tiene id de backend'));
     const codigo = ESTADO_TO_CODIGO[ACCION_A_ESTADO[accion]] as
@@ -91,6 +98,9 @@ export class EmpresaService {
       estado_nuevo: codigo,
       justificacion: nota || undefined,
       usuario_id: this.sesionSvc.sesion.usuarioId ?? undefined,
+      comprobante: comprobante
+        ? { nombre_archivo: comprobante.nombreArchivo, file: comprobante.fileBase64 }
+        : undefined,
     // take(1): getBandeja() es reactivo a la sesión y no completa; aquí basta
     // la primera bandeja fresca tras responder.
     }).pipe(switchMap(() => this.getBandeja().pipe(take(1))));
@@ -123,6 +133,32 @@ export class EmpresaService {
     );
   }
 
+  /* ── Documentos de la solicitud (revisión y comentario de la empresa) ─── */
+
+  /** Requeridos vs. subidos por el egresado, para revisar antes de responder. */
+  getDocumentos(s: SolicitudRecibida): Observable<DocumentoSolicitudItem[]> {
+    if (s.id == null) return of([]);
+    return this.api.getDocumentosSolicitud(s.id).pipe(
+      map(dtos => (dtos ?? []).map(mapDocumentoSolicitud)),
+      catchError(() => of([] as DocumentoSolicitudItem[])),
+    );
+  }
+
+  /** Observación de la empresa sobre un documento (campo único, se sobreescribe). */
+  comentarDocumento(s: SolicitudRecibida, documentoSolicitudId: number, comentario: string):
+    Observable<DocumentoSolicitudItem[]> {
+    return this.api.comentarDocumento(documentoSolicitudId, comentario).pipe(
+      switchMap(() => this.getDocumentos(s)),
+    );
+  }
+
+  /** Base64 del PDF para verlo/descargarlo (proxy de solo lectura vía MID). */
+  getArchivoDocumento(documentoSolicitudId: number): Observable<{ nombreArchivo: string; file: string }> {
+    return this.api.getArchivoDocumento(documentoSolicitudId).pipe(
+      map(dto => ({ nombreArchivo: dto.nombre_archivo, file: dto.file })),
+    );
+  }
+
   /* ── Beneficios publicados (RF-005) ────────────────────────── */
 
   /** Vista de gestión: TODOS los beneficios del dueño (cualquier estado) con
@@ -147,6 +183,10 @@ export class EmpresaService {
     if (empresaId == null) return throwError(() => new Error('Sesión sin empresa local (JIT pendiente)'));
     const categoriaId = Number(form.categoria);
     if (!categoriaId) return throwError(() => new Error('Selecciona la categoría del beneficio'));
+    const documentosRequeridos = (form.documentosRequeridos ?? [])
+      .filter(d => d.nombre.trim())
+      .map(d => ({ nombre: d.nombre.trim(), descripcion: d.descripcion.trim() }));
+
     return this.api.publicarBeneficio(empresaId, {
       titulo: form.titulo.trim(),
       // TODO frontend: separar descripción y condiciones en el formulario
@@ -158,6 +198,7 @@ export class EmpresaService {
       fecha_fin: form.vigenciaHasta,
       cupos_total: form.cuposIniciales,
       usuario_creador_id: usuarioId ?? undefined,
+      documentos_requeridos: documentosRequeridos.length > 0 ? documentosRequeridos : undefined,
     }).pipe(
       // take(1): getBeneficiosEmpresa() es reactivo y no completa; basta la
       // primera lista fresca tras publicar.

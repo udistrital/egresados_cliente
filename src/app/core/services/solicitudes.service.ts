@@ -8,10 +8,10 @@ import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, distinctUntilChanged, filter, map, switchMap, take, tap } from 'rxjs/operators';
 import {
-  Beneficio, ESTADOS, HistorialEntrada, MensajeHilo, Solicitud,
+  Beneficio, DocumentoSolicitudItem, ESTADOS, HistorialEntrada, MensajeHilo, Solicitud,
 } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
-import { mapMensaje, mapSolicitud } from '../api/mappers';
+import { mapDocumentoSolicitud, mapMensaje, mapSolicitud } from '../api/mappers';
 import { BeneficiosService } from './beneficios.service';
 import { UsuarioSesionService } from './usuario-sesion.service';
 
@@ -143,6 +143,49 @@ export class SolicitudesService {
     if (usuarioId == null) return throwError(() => new Error('Sesión sin usuario local (JIT pendiente)'));
     return this.api.enviarMensaje(s.id, usuarioId, texto).pipe(
       switchMap(() => this.getMensajes(s)),
+    );
+  }
+
+  /* ── Documentos requeridos de la solicitud (subida por el egresado) ───── */
+
+  /** Requeridos vs. subidos: qué le falta al egresado y qué ya envió. */
+  getDocumentos(solicitudId: number): Observable<DocumentoSolicitudItem[]> {
+    return this.api.getDocumentosSolicitud(solicitudId).pipe(
+      map(dtos => (dtos ?? []).map(mapDocumentoSolicitud)),
+      catchError(() => of([] as DocumentoSolicitudItem[])),
+    );
+  }
+
+  /** Sube (o reemplaza) el PDF de un documento requerido. Solo mientras la
+   *  solicitud sigue en curso (el MID valida el estado, RN-005). */
+  subirDocumento(solicitudId: number, documentoRequeridoId: number, nombreArchivo: string, fileBase64: string):
+    Observable<DocumentoSolicitudItem[]> {
+    return this.api.subirDocumentoSolicitud(solicitudId, {
+      documento_requerido_id: documentoRequeridoId, nombre_archivo: nombreArchivo, file: fileBase64,
+    }).pipe(switchMap(() => this.getDocumentos(solicitudId)));
+  }
+
+  /** Quita un documento ya subido. */
+  eliminarDocumento(solicitudId: number, documentoSolicitudId: number): Observable<DocumentoSolicitudItem[]> {
+    return this.api.eliminarDocumentoSolicitud(solicitudId, documentoSolicitudId).pipe(
+      switchMap(() => this.getDocumentos(solicitudId)),
+    );
+  }
+
+  /** Base64 del PDF para verlo/descargarlo (proxy de solo lectura vía MID). */
+  getArchivoDocumento(documentoSolicitudId: number): Observable<{ nombreArchivo: string; file: string }> {
+    return this.api.getArchivoDocumento(documentoSolicitudId).pipe(
+      map(dto => ({ nombreArchivo: dto.nombre_archivo, file: dto.file })),
+    );
+  }
+
+  /** Comprobante OPCIONAL que la empresa adjuntó al aprobar (tieneComprobante=false
+   *  si no adjuntó nada, caso normal — no es un error). */
+  getComprobante(s: Solicitud): Observable<{ tieneComprobante: boolean; nombreArchivo?: string; file?: string }> {
+    if (s.id == null) return of({ tieneComprobante: false });
+    return this.api.getComprobanteSolicitud(s.id).pipe(
+      map(dto => ({ tieneComprobante: dto.tiene_comprobante, nombreArchivo: dto.nombre_archivo, file: dto.file })),
+      catchError(() => of({ tieneComprobante: false })),
     );
   }
 }

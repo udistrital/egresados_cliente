@@ -75,6 +75,8 @@ export interface BeneficioDto {
   /** Solo en GET /v1/empresas/:id/beneficios (vista de gestión del dueño) */
   estado_beneficio?: string;
   solicitudes_pendientes?: number;
+  /** Documentos que la empresa exige para postularse (anexados en GET /v1/beneficios/:id) */
+  documentos_requeridos?: DocumentoRequeridoDto[];
 }
 
 /** Respuesta de GET /v1/empresas/:id — perfil público (whitelist RNF-002b) */
@@ -107,6 +109,40 @@ export interface SolicitudDto {
   fecha_modificacion?: string;
   estado_solicitud?: string;
   estado_solicitud_id?: number;
+}
+
+/** Documento que la empresa exige para postularse (GET /v1/beneficios/:id/documentos-requeridos) */
+export interface DocumentoRequeridoDto {
+  id: number;
+  nombre: string;
+  descripcion: string;
+}
+
+/** Ítem de GET /v1/solicitudes/:id/documentos: requerido + estado de subida */
+export interface DocumentoSolicitudDto {
+  documento_requerido_id: number;
+  nombre: string;
+  descripcion: string;
+  subido: boolean;
+  documento_solicitud_id?: number;
+  nombre_archivo?: string;
+  comentario_empresa?: string;
+  fecha_comentario?: string;
+}
+
+/** Respuesta de GET /v1/documentos/:doc_id/archivo (proxy de lectura al gestor documental) */
+export interface ArchivoDocumentoDto {
+  nombre_archivo: string;
+  /** PDF codificado en base64 (sin prefijo data:) */
+  file: string;
+}
+
+/** Respuesta de GET /v1/solicitudes/:id/comprobante (comprobante OPCIONAL de la empresa al aprobar) */
+export interface ComprobanteSolicitudDto {
+  tiene_comprobante: boolean;
+  nombre_archivo?: string;
+  /** PDF codificado en base64 (sin prefijo data:) */
+  file?: string;
 }
 
 /** Ítem de la bandeja de empresa (el MID minimiza datos del egresado, RNF-002b) */

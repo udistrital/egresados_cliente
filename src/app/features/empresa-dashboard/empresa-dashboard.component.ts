@@ -8,8 +8,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
-  Empresa, SolicitudRecibida, EstadoSolicitud, HistorialEntrada, MensajeHilo,
-  ESTADOS, EMPRESA_VACIA,
+  DocumentoSolicitudItem, Empresa, SolicitudRecibida, EstadoSolicitud, HistorialEntrada,
+  MensajeHilo, ESTADOS, EMPRESA_VACIA,
 } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
 import { AccionRespuesta, EmpresaService } from '../../core/services/empresa.service';
@@ -20,6 +20,8 @@ interface RespuestaPanel {
   radicado: string;
   accion: AccionRespuesta;
   nota: string;
+  /** Comprobante OPCIONAL (solo tiene efecto si accion === 'aprobar') */
+  archivo?: { nombreArchivo: string; base64: string };
 }
 
 @Component({
@@ -50,10 +52,18 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
   drawerAccion: AccionRespuesta | null = null;
   drawerNota = '';
   drawerError: string | null = null;
+  /** Comprobante OPCIONAL (solo tiene efecto si drawerAccion === 'aprobar') */
+  drawerArchivoComprobante: { nombreArchivo: string; base64: string } | null = null;
+  /** Error de validación del archivo (PDF), compartido entre panel inline y drawer */
+  errorComprobante: string | null = null;
   nuevoMensaje = '';
   /** Bitácora y mensajes del drawer (se cargan al abrirlo) */
   private historialCache: HistorialEntrada[] = [];
   private mensajesCache: MensajeHilo[] = [];
+  /** Documentos del egresado (se cargan al abrirlo) + borrador de comentario por documento */
+  documentosCache: DocumentoSolicitudItem[] = [];
+  comentarioBorrador: Record<number, string> = {};
+  guardandoComentarioId: number | null = null;
 
   /** RN-003 — en backend viene del parámetro JUSTIFICACION_RECHAZO_MIN_CARACTERES */
   readonly JUSTIFICACION_MIN = 20;
@@ -170,12 +180,13 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     this.respuestaPanel = { radicado, accion, nota: '' };
+    this.errorComprobante = null;
   }
 
   confirmarRespuesta(): void {
     if (!this.respuestaPanel) return;
-    const { radicado, accion, nota } = this.respuestaPanel;
-    this.aplicarRespuesta(radicado, accion, nota);
+    const { radicado, accion, nota, archivo } = this.respuestaPanel;
+    this.aplicarRespuesta(radicado, accion, nota, archivo);
     this.respuestaPanel = null;
   }
 
@@ -184,12 +195,15 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
   /**
    * Aplica la respuesta vía fachada: PUT mid /v1/solicitudes/:id/responder
    * (RN-003/004/005 las valida el MID; en demo se replican en EmpresaService).
+   * `comprobante` es OPCIONAL y el MID solo lo acepta junto a accion==='aprobar'.
    */
-  private aplicarRespuesta(radicado: string, accion: AccionRespuesta, nota: string): void {
+  private aplicarRespuesta(radicado: string, accion: AccionRespuesta, nota: string,
+    comprobante?: { nombreArchivo: string; base64: string }): void {
     const solicitud = this.solicitudes.find(s => s.radicado === radicado);
     if (!solicitud) return;
 
-    this.empresaSvc.responder(solicitud, accion, nota)
+    this.empresaSvc.responder(solicitud, accion, nota,
+      comprobante ? { nombreArchivo: comprobante.nombreArchivo, fileBase64: comprobante.base64 } : undefined)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: solicitudes => {
@@ -207,6 +221,45 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  /* ── Comprobante opcional al aprobar (panel inline + drawer) ───── */
+
+  private leerComprobante(event: Event, onOk: (archivo: { nombreArchivo: string; base64: string }) => void): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    const esPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!esPdf) {
+      this.errorComprobante = 'Solo se permiten archivos PDF.';
+      return;
+    }
+    this.errorComprobante = null;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      onOk({ nombreArchivo: file.name, base64: String(reader.result).split(',')[1] });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  onArchivoComprobantePanel(event: Event): void {
+    if (!this.respuestaPanel) return;
+    this.leerComprobante(event, archivo => { this.respuestaPanel!.archivo = archivo; });
+  }
+
+  quitarArchivoComprobantePanel(): void {
+    if (this.respuestaPanel) this.respuestaPanel.archivo = undefined;
+  }
+
+  onArchivoComprobanteDrawer(event: Event): void {
+    this.leerComprobante(event, archivo => { this.drawerArchivoComprobante = archivo; });
+  }
+
+  quitarArchivoComprobanteDrawer(): void {
+    this.drawerArchivoComprobante = null;
+  }
+
   /* ── Drawer de detalle ─────────────────────────────────── */
 
   abrirDetalle(s: SolicitudRecibida): void {
@@ -214,6 +267,8 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
     this.drawerAccion = null;
     this.drawerNota = '';
     this.drawerError = null;
+    this.drawerArchivoComprobante = null;
+    this.errorComprobante = null;
     this.nuevoMensaje = '';
     this.respuestaPanel = null;
     this.cargarDetalleDrawer(s);
@@ -222,12 +277,24 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
   private cargarDetalleDrawer(s: SolicitudRecibida): void {
     this.historialCache = [];
     this.mensajesCache = [];
+    this.documentosCache = [];
+    this.comentarioBorrador = {};
     this.empresaSvc.getHistorial(s)
       .pipe(takeUntil(this.destroy$))
       .subscribe(historial => (this.historialCache = historial));
     this.empresaSvc.getMensajes(s)
       .pipe(takeUntil(this.destroy$))
       .subscribe(mensajes => (this.mensajesCache = mensajes));
+    this.empresaSvc.getDocumentos(s)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(documentos => {
+        this.documentosCache = documentos;
+        for (const d of documentos) {
+          if (d.documentoSolicitudId != null) {
+            this.comentarioBorrador[d.documentoSolicitudId] = d.comentarioEmpresa ?? '';
+          }
+        }
+      });
   }
 
   cerrarDetalle(): void {
@@ -249,9 +316,48 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
     return this.drawer ? this.mensajesCache : [];
   }
 
+  get documentosDrawer(): DocumentoSolicitudItem[] {
+    return this.drawer ? this.documentosCache : [];
+  }
+
+  /* ── Documentos del egresado (ver + comentar) ──────────────── */
+
+  verDocumento(item: DocumentoSolicitudItem): void {
+    if (item.documentoSolicitudId == null) return;
+    this.empresaSvc.getArchivoDocumento(item.documentoSolicitudId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(({ file }) => {
+        const bytes = atob(file);
+        const array = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) array[i] = bytes.charCodeAt(i);
+        const blob = new Blob([array], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      });
+  }
+
+  guardarComentario(item: DocumentoSolicitudItem): void {
+    if (!this.drawer || item.documentoSolicitudId == null) return;
+    const texto = (this.comentarioBorrador[item.documentoSolicitudId] ?? '').trim();
+    if (!texto) return;
+    this.guardandoComentarioId = item.documentoSolicitudId;
+    this.empresaSvc.comentarDocumento(this.drawer, item.documentoSolicitudId, texto)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: documentos => {
+          this.documentosCache = documentos;
+          this.guardandoComentarioId = null;
+        },
+        error: () => { this.guardandoComentarioId = null; },
+      });
+  }
+
   seleccionarAccion(accion: AccionRespuesta): void {
     this.drawerAccion = this.drawerAccion === accion ? null : accion;
     this.drawerError = null;
+    this.drawerArchivoComprobante = null;
+    this.errorComprobante = null;
   }
 
   confirmarDesdeDrawer(): void {
@@ -268,10 +374,11 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.aplicarRespuesta(this.drawer.radicado, this.drawerAccion, nota);
+    this.aplicarRespuesta(this.drawer.radicado, this.drawerAccion, nota, this.drawerArchivoComprobante ?? undefined);
     this.drawerAccion = null;
     this.drawerNota = '';
     this.drawerError = null;
+    this.drawerArchivoComprobante = null;
   }
 
   /** El hilo vive mientras la conversación está abierta: REQUIERE_INFO (el

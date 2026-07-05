@@ -458,7 +458,7 @@ a:hover { color: var(--link-hover); }
 
 /* Header */
 .dash-header {
-  height: 64px;
+  height: 84px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: grid;
@@ -474,10 +474,10 @@ a:hover { color: var(--link-hover); }
 .dash-header__brand {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
 
   img {
-    height: 36px;
+    height: 48px;
     width: auto;
     display: block;
     flex-shrink: 0;
@@ -492,15 +492,15 @@ a:hover { color: var(--link-hover); }
   .product {
     font-weight: 700;
     color: var(--fg-1);
-    font-size: 15px;
+    font-size: 19px;
     letter-spacing: -0.005em;
   }
   .org {
-    font-size: 10.5px;
+    font-size: 12.5px;
     color: var(--fg-3);
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    margin-top: 3px;
+    margin-top: 4px;
     font-weight: 500;
   }
 }
@@ -1070,6 +1070,84 @@ a:hover { color: var(--link-hover); }
   display: flex;
   gap: var(--space-2);
   justify-content: flex-end;
+}
+
+/* ─── Documentos requeridos (compartido: modal de solicitud, drawer de "mis
+   solicitudes" y drawer de bandeja de empresa) ──────────────────────────── */
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  flex-wrap: wrap;
+}
+
+.doc-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong { font-size: 13.5px; color: var(--fg-1); }
+}
+
+.doc-item__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+
+  .btn { width: auto; padding: 0 14px; height: 34px; font-size: 13px; cursor: pointer; }
+}
+
+.doc-item__nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+
+.doc-item__comentario {
+  font-size: 12.5px;
+  color: var(--fg-2);
+
+  em { font-style: normal; font-weight: var(--weight-medium); color: var(--fg-1); }
+}
+
+.doc-item__comentario-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--border);
+
+  textarea {
+    resize: vertical;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    color: var(--fg-1);
+
+    &::placeholder { color: var(--fg-3); }
+    &:focus-visible { outline: none; box-shadow: var(--ring-primary); border-color: var(--primary-500); }
+  }
+
+  .btn { align-self: flex-end; }
 }
 
 /* ─── Skeleton loading (compartido: bandeja empresa, mis solicitudes…) ── */

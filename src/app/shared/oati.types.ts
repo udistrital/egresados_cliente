@@ -57,6 +57,31 @@ export interface Beneficio {
 export interface BeneficioDetalle {
   descripcion: string;
   condiciones: string;
+  /** Documentos que la empresa exige para postularse (vacío = ninguno) */
+  documentosRequeridos: DocumentoRequerido[];
+}
+
+/** Documento que la empresa exige para postularse (definido al publicar el beneficio) */
+export interface DocumentoRequerido {
+  id?: number;
+  nombre: string;
+  descripcion: string;
+}
+
+/**
+ * Documento requerido visto desde una solicitud puntual: el requisito + si ya se
+ * subió (y con qué datos). Misma forma para la vista del egresado (qué le falta) y
+ * la de la empresa (qué revisar/comentar).
+ */
+export interface DocumentoSolicitudItem {
+  documentoRequeridoId: number;
+  nombre: string;
+  descripcion: string;
+  subido: boolean;
+  documentoSolicitudId?: number;
+  nombreArchivo?: string;
+  comentarioEmpresa?: string;
+  fechaComentario?: string;
 }
 
 /** Perfil público de la empresa aliada (GET mid /v1/empresas/:id, whitelist RNF-002b) */

@@ -134,7 +134,19 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 
   /* ── Publicar formulario ───────────────────────────────── */
   private formVacio(): FormPublicarBeneficio {
-    return { titulo: '', categoria: '', cuposIniciales: null, vigenciaHasta: '', resumen: '' };
+    return {
+      titulo: '', categoria: '', cuposIniciales: null, vigenciaHasta: '', resumen: '',
+      documentosRequeridos: [],
+    };
+  }
+
+  /* ── Documentos requeridos (opcional, del formulario de publicación) ──── */
+  agregarDocumentoRequerido(): void {
+    this.form.documentosRequeridos.push({ nombre: '', descripcion: '' });
+  }
+
+  quitarDocumentoRequerido(index: number): void {
+    this.form.documentosRequeridos.splice(index, 1);
   }
 
   get formValido(): boolean {

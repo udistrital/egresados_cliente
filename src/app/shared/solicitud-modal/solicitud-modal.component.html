@@ -73,7 +73,70 @@
       </footer>
     </ng-container>
 
-    <!-- ── Fase 2 · Éxito ─────────────────────────────────────── -->
+    <!-- ── Fase 2 · Documentos requeridos (solo si el beneficio los exige) ──── -->
+    <ng-container *ngIf="fase === 'documentos'">
+      <header class="smodal__head">
+        <span class="categoria-tag" [ngStyle]="categoriaStyle()">{{ beneficio.categoria }}</span>
+      </header>
+
+      <h2 class="smodal__title">¡Solicitud radicada! Ahora sube tus documentos</h2>
+      <div class="smodal__radicado">
+        <span class="smodal__radicado-label">Número de radicado</span>
+        <code class="smodal__radicado-num">{{ radicado }}</code>
+      </div>
+
+      <p class="smodal__exito-sub">
+        <strong>{{ beneficio.empresa }}</strong> exige estos documentos en <strong>PDF</strong> para
+        evaluar tu solicitud. Puedes completarlos ahora o más tarde desde "Mis solicitudes".
+      </p>
+
+      <div *ngIf="errorDocumentos" class="smodal__error" role="alert">
+        <mat-icon style="font-size:18px;height:18px;width:18px">error_outline</mat-icon>
+        {{ errorDocumentos }}
+      </div>
+
+      <section class="doc-list">
+        <div *ngFor="let doc of documentos" class="doc-item">
+          <div class="doc-item__info">
+            <strong>{{ doc.nombre }}</strong>
+            <span class="smodal__meta">{{ doc.descripcion }}</span>
+          </div>
+
+          <div class="doc-item__acciones">
+            <ng-container *ngIf="doc.subido; else sinSubir">
+              <span class="doc-item__nombre">
+                <mat-icon style="font-size:16px;height:16px;width:16px">description</mat-icon>
+                {{ doc.nombreArchivo }}
+              </span>
+              <button class="btn btn--ghost" type="button" (click)="verDocumento(doc)">Ver</button>
+              <label class="btn btn--ghost">
+                Reemplazar
+                <input type="file" accept=".pdf,application/pdf" hidden
+                       (change)="onArchivoSeleccionado(doc, $event)" />
+              </label>
+              <button class="btn btn--ghost" type="button" (click)="quitarDocumento(doc)">Quitar</button>
+            </ng-container>
+            <ng-template #sinSubir>
+              <label class="btn btn--primary" style="width:auto;padding:0 16px">
+                {{ subiendoId === doc.documentoRequeridoId ? 'Subiendo…' : 'Subir PDF' }}
+                <input type="file" accept=".pdf,application/pdf" hidden
+                       [disabled]="subiendoId === doc.documentoRequeridoId"
+                       (change)="onArchivoSeleccionado(doc, $event)" />
+              </label>
+            </ng-template>
+          </div>
+        </div>
+      </section>
+
+      <footer class="smodal__foot">
+        <button class="btn btn--primary" type="button" (click)="finalizarDocumentos()">
+          Continuar
+          <mat-icon style="font-size:16px;height:16px;width:16px">arrow_forward</mat-icon>
+        </button>
+      </footer>
+    </ng-container>
+
+    <!-- ── Fase 3 · Éxito ─────────────────────────────────────── -->
     <ng-container *ngIf="fase === 'exito'">
       <div class="smodal__exito">
         <span class="smodal__exito-icon">

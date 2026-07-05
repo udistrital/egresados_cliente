@@ -5,11 +5,13 @@
    forma cruda del MID.
    ============================================================ */
 import {
-  Beneficio, BeneficioDetalle, BeneficioEmpresa, CategoriaBeneficio, EstadoSolicitud,
-  HistorialEntrada, MensajeHilo, PerfilEmpresa, Solicitud, SolicitudRecibida,
+  Beneficio, BeneficioDetalle, BeneficioEmpresa, CategoriaBeneficio, DocumentoRequerido,
+  DocumentoSolicitudItem, EstadoSolicitud, HistorialEntrada, MensajeHilo, PerfilEmpresa,
+  Solicitud, SolicitudRecibida,
 } from '../../shared/oati.types';
 import {
-  BandejaItemDto, BeneficioDto, HistorialDto, MensajeDto, PerfilEmpresaDto, SolicitudDto,
+  BandejaItemDto, BeneficioDto, DocumentoRequeridoDto, DocumentoSolicitudDto, HistorialDto,
+  MensajeDto, PerfilEmpresaDto, SolicitudDto,
 } from './api.types';
 
 /** codigo_abreviacion del parámetro ESTADO_SOLICITUD → clave de estado de la UI */
@@ -86,7 +88,28 @@ export function mapBeneficio(dto: BeneficioDto, categorias: CategoriaMap): Benef
 }
 
 export function mapBeneficioDetalle(dto: BeneficioDto): BeneficioDetalle {
-  return { descripcion: dto.descripcion, condiciones: dto.condiciones };
+  return {
+    descripcion: dto.descripcion,
+    condiciones: dto.condiciones,
+    documentosRequeridos: (dto.documentos_requeridos ?? []).map(mapDocumentoRequerido),
+  };
+}
+
+export function mapDocumentoRequerido(dto: DocumentoRequeridoDto): DocumentoRequerido {
+  return { id: dto.id, nombre: dto.nombre, descripcion: dto.descripcion };
+}
+
+export function mapDocumentoSolicitud(dto: DocumentoSolicitudDto): DocumentoSolicitudItem {
+  return {
+    documentoRequeridoId: dto.documento_requerido_id,
+    nombre: dto.nombre,
+    descripcion: dto.descripcion,
+    subido: dto.subido,
+    documentoSolicitudId: dto.documento_solicitud_id,
+    nombreArchivo: dto.nombre_archivo,
+    comentarioEmpresa: dto.comentario_empresa,
+    fechaComentario: dto.fecha_comentario,
+  };
 }
 
 /** Vista de gestión del dueño: beneficio + estado de publicación + métricas. */

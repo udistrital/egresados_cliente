@@ -9,8 +9,8 @@
     <div class="dash-header__brand">
       <img src="assets/images/logo-ud-circular.png" alt="UD" />
       <div class="dash-header__brand-text">
-        <span class="product">Beneficios UD</span>
-        <span class="org">Portal de Empresas · OATI</span>
+        <span class="product">Banco de Proveedores Agora</span>
+        <span class="org">Portal de Empresas</span>
       </div>
     </div>
 
@@ -323,6 +323,31 @@
                 ></textarea>
               </div>
 
+              <!-- Comprobante OPCIONAL, solo al aprobar -->
+              <div *ngIf="respuestaPanel?.accion === 'aprobar'" class="resp-panel__field">
+                <label class="field-label">Comprobante para el egresado (opcional, PDF)</label>
+
+                <div *ngIf="errorComprobante" class="drawer__error" role="alert">
+                  <mat-icon style="font-size:16px;height:16px;width:16px">error_outline</mat-icon>
+                  {{ errorComprobante }}
+                </div>
+
+                <div *ngIf="!respuestaPanel!.archivo" class="doc-item__acciones">
+                  <label class="btn btn--ghost" style="width:auto;padding:0 14px;height:34px;font-size:13px">
+                    <mat-icon style="font-size:16px;height:16px;width:16px">attach_file</mat-icon>
+                    Adjuntar PDF
+                    <input type="file" accept=".pdf,application/pdf" hidden (change)="onArchivoComprobantePanel($event)" />
+                  </label>
+                </div>
+                <div *ngIf="respuestaPanel!.archivo" class="doc-item__acciones">
+                  <span class="doc-item__nombre">
+                    <mat-icon style="font-size:16px;height:16px;width:16px">description</mat-icon>
+                    {{ respuestaPanel!.archivo!.nombreArchivo }}
+                  </span>
+                  <button class="btn btn--ghost" type="button" (click)="quitarArchivoComprobantePanel()">Quitar</button>
+                </div>
+              </div>
+
               <div class="resp-panel__actions">
                 <button type="button" class="btn btn--ghost" style="width:auto;padding:0 16px;height:36px;font-size:13px" (click)="cancelarRespuesta()">
                   Cancelar
@@ -427,6 +452,51 @@
           <p *ngIf="!d.datosComplementarios" class="drawer__muted">El egresado no envió información adicional.</p>
         </section>
 
+        <!-- Documentos adjuntos por el egresado -->
+        <section *ngIf="documentosDrawer.length > 0" class="drawer__section">
+          <h3 class="drawer__section-title">Documentos adjuntos</h3>
+
+          <div class="doc-list">
+            <div *ngFor="let doc of documentosDrawer" class="doc-item">
+              <div class="doc-item__info">
+                <strong>{{ doc.nombre }}</strong>
+                <span class="drawer__muted">{{ doc.descripcion }}</span>
+              </div>
+
+              <div class="doc-item__acciones">
+                <ng-container *ngIf="doc.subido; else sinAdjuntar">
+                  <span class="doc-item__nombre">
+                    <mat-icon style="font-size:16px;height:16px;width:16px">description</mat-icon>
+                    {{ doc.nombreArchivo }}
+                  </span>
+                  <button class="btn btn--ghost" type="button" (click)="verDocumento(doc)">Ver</button>
+                </ng-container>
+                <ng-template #sinAdjuntar>
+                  <span class="drawer__muted">Aún no lo ha subido</span>
+                </ng-template>
+              </div>
+
+              <div *ngIf="doc.subido && doc.documentoSolicitudId != null" class="doc-item__comentario-form">
+                <textarea
+                  rows="2"
+                  placeholder="Comentar este documento (ej. no es legible, falta la firma)…"
+                  [(ngModel)]="comentarioBorrador[doc.documentoSolicitudId]"
+                  [name]="'comentario-' + doc.documentoSolicitudId"
+                ></textarea>
+                <button
+                  class="btn btn--ghost"
+                  type="button"
+                  style="width:auto;padding:0 14px;height:32px;font-size:12.5px"
+                  [disabled]="guardandoComentarioId === doc.documentoSolicitudId || !(comentarioBorrador[doc.documentoSolicitudId] || '').trim()"
+                  (click)="guardarComentario(doc)"
+                >
+                  {{ guardandoComentarioId === doc.documentoSolicitudId ? 'Guardando…' : 'Guardar comentario' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Historial de estados (RN-004 / C-4b) -->
         <section class="drawer__section">
           <h3 class="drawer__section-title">Historial de la solicitud</h3>
@@ -520,6 +590,31 @@
               : drawerAccion === 'rechazar'
               ? 'Ej. Cupos no disponibles para el programa seleccionado en este periodo…'
               : 'Ej. Por favor adjunta tu certificado de grado actualizado…'"></textarea>
+
+          <!-- Comprobante OPCIONAL, solo al aprobar -->
+          <div *ngIf="drawerAccion === 'aprobar'">
+            <label class="field-label">Comprobante para el egresado (opcional, PDF)</label>
+
+            <div *ngIf="errorComprobante" class="drawer__error" role="alert">
+              <mat-icon style="font-size:16px;height:16px;width:16px">error_outline</mat-icon>
+              {{ errorComprobante }}
+            </div>
+
+            <div *ngIf="!drawerArchivoComprobante" class="doc-item__acciones">
+              <label class="btn btn--ghost" style="width:auto;padding:0 14px;height:34px;font-size:13px">
+                <mat-icon style="font-size:16px;height:16px;width:16px">attach_file</mat-icon>
+                Adjuntar PDF
+                <input type="file" accept=".pdf,application/pdf" hidden (change)="onArchivoComprobanteDrawer($event)" />
+              </label>
+            </div>
+            <div *ngIf="drawerArchivoComprobante" class="doc-item__acciones">
+              <span class="doc-item__nombre">
+                <mat-icon style="font-size:16px;height:16px;width:16px">description</mat-icon>
+                {{ drawerArchivoComprobante.nombreArchivo }}
+              </span>
+              <button class="btn btn--ghost" type="button" (click)="quitarArchivoComprobanteDrawer()">Quitar</button>
+            </div>
+          </div>
 
           <div *ngIf="drawerError" class="drawer__error" role="alert">
             <mat-icon style="font-size:16px;height:16px;width:16px">error_outline</mat-icon>

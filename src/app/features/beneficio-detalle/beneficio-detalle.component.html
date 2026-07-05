@@ -9,8 +9,8 @@
     <div class="dash-header__brand">
       <img src="assets/images/logo-ud-circular.png" alt="UD" />
       <div class="dash-header__brand-text">
-        <span class="product">Beneficios UD</span>
-        <span class="org">Portal de Egresados · OATI</span>
+        <span class="product">Egresados UD</span>
+        <span class="org">Portal de Egresados</span>
       </div>
     </div>
 
@@ -243,7 +243,11 @@
             </div>
           </div>
 
-          <p *ngIf="perfilEmpresa.descripcion" class="bdet-empresa__desc">{{ perfilEmpresa.descripcion }}</p>
+          <div
+            *ngIf="perfilEmpresa.descripcion"
+            class="bdet-empresa__desc bdet-empresa__desc--rich"
+            [innerHTML]="perfilEmpresa.descripcion"
+          ></div>
 
           <div class="bdet-empresa__contact">
             <a *ngIf="perfilEmpresa.sitioWeb" class="bdet-contact-item"

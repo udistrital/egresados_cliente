@@ -9,8 +9,8 @@
     <div class="dash-header__brand">
       <img src="assets/images/logo-ud-circular.png" alt="UD" />
       <div class="dash-header__brand-text">
-        <span class="product">Beneficios UD</span>
-        <span class="org">Portal de Empresas · OATI</span>
+        <span class="product">Banco de Proveedores Agora</span>
+        <span class="org">Portal de Empresas</span>
       </div>
     </div>
 
@@ -182,6 +182,55 @@
             </div>
 
           </div><!-- /pub-form__grid -->
+
+          <!-- Documentos requeridos (opcional) -->
+          <div class="field-group pub-form__full" style="margin-top:8px">
+            <label class="field-label">
+              Documentos que debe adjuntar el egresado (opcional)
+            </label>
+            <p class="pub-form-section__sub" style="margin:0 0 8px">
+              Ej. hoja de vida, cédula. El egresado subirá cada uno en PDF al postularse.
+            </p>
+
+            <div *ngFor="let doc of form.documentosRequeridos; let i = index" class="doc-req-row">
+              <div class="field-group">
+                <label class="field-label" [attr.for]="'doc-nombre-' + i">Nombre del documento</label>
+                <input
+                  [id]="'doc-nombre-' + i"
+                  type="text"
+                  class="field-input"
+                  placeholder="Ej. Hoja de vida"
+                  [(ngModel)]="doc.nombre"
+                  [name]="'docNombre' + i"
+                />
+              </div>
+              <div class="field-group">
+                <label class="field-label" [attr.for]="'doc-descripcion-' + i">Descripción</label>
+                <input
+                  [id]="'doc-descripcion-' + i"
+                  type="text"
+                  class="field-input"
+                  placeholder="Ej. Actualizada, en PDF"
+                  [(ngModel)]="doc.descripcion"
+                  [name]="'docDescripcion' + i"
+                />
+              </div>
+              <button
+                type="button"
+                class="doc-req-row__remove"
+                title="Quitar documento"
+                aria-label="Quitar documento"
+                (click)="quitarDocumentoRequerido(i)"
+              >
+                <mat-icon style="font-size:16px;height:16px;width:16px">delete</mat-icon>
+              </button>
+            </div>
+
+            <button type="button" class="btn btn--ghost" style="width:auto;padding:0 16px" (click)="agregarDocumentoRequerido()">
+              <mat-icon style="font-size:18px;height:18px;width:18px">add</mat-icon>
+              Agregar documento requerido
+            </button>
+          </div>
 
           <div class="pub-form__footer">
             <button type="button" class="btn btn--ghost" style="width:auto;padding:0 16px" (click)="toggleFormulario()">
