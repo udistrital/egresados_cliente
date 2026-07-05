@@ -173,9 +173,26 @@
                 id="pub-resumen"
                 class="field-input"
                 style="height:96px;padding:12px;resize:vertical"
-                placeholder="Describe el beneficio, condiciones y cómo lo obtiene el egresado…"
+                placeholder="Qué obtiene el egresado y cómo lo redime…"
                 [(ngModel)]="form.resumen"
                 name="resumen"
+                required
+                rows="4"
+              ></textarea>
+            </div>
+
+            <!-- Condiciones (RN-008b) -->
+            <div class="field-group pub-form__full">
+              <label class="field-label" for="pub-condiciones">
+                Condiciones y requisitos <span class="required-mark">*</span>
+              </label>
+              <textarea
+                id="pub-condiciones"
+                class="field-input"
+                style="height:96px;padding:12px;resize:vertical"
+                placeholder="Lo que el egresado acepta al postularse. Escribe una condición por línea para mostrarlas como lista…"
+                [(ngModel)]="form.condiciones"
+                name="condiciones"
                 required
                 rows="4"
               ></textarea>

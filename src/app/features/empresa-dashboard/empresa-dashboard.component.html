@@ -69,7 +69,7 @@
           Revisa cada solicitud y responde oportunamente.
         </p>
       </div>
-      <a class="btn btn--primary greeting__cta" routerLink="/empresa/beneficios">
+      <a class="btn btn--primary greeting__cta" routerLink="/empresa/beneficios" [queryParams]="{ publicar: 1 }">
         Publicar beneficio
         <mat-icon style="font-size:18px;height:18px;width:18px">add</mat-icon>
       </a>

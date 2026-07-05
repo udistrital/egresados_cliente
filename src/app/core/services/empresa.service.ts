@@ -28,7 +28,11 @@ export interface FormPublicarBeneficio {
   categoria: string;
   cuposIniciales: number | null;
   vigenciaHasta: string;
+  /** Descripción del beneficio: qué obtiene el egresado ("Qué obtienes" en el detalle). */
   resumen: string;
+  /** Condiciones y requisitos que acepta el egresado al postularse (RN-008b).
+   *  Una condición por línea → el detalle las pinta como checklist. */
+  condiciones: string;
   /** Documentos que se le exigirán al egresado al postularse (opcional, RF-005-doc) */
   documentosRequeridos: { nombre: string; descripcion: string }[];
 }
@@ -189,10 +193,8 @@ export class EmpresaService {
 
     return this.api.publicarBeneficio(empresaId, {
       titulo: form.titulo.trim(),
-      // TODO frontend: separar descripción y condiciones en el formulario
-      // (el MID exige ambos campos, RN-008b); hoy el form solo tiene "resumen".
       descripcion: form.resumen.trim(),
-      condiciones: form.resumen.trim(),
+      condiciones: form.condiciones.trim(),
       categoria_beneficio_id: categoriaId,
       fecha_inicio: new Date().toISOString().slice(0, 10),
       fecha_fin: form.vigenciaHasta,

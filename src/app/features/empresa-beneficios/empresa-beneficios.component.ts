@@ -3,6 +3,7 @@
    RF-005: publicación de beneficios (solo empresas aprobadas)
    ============================================================ */
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
@@ -65,9 +66,23 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
     private autenticacion: ImplicitAutenticationService,
     private empresaSvc: EmpresaService,
     private beneficiosSvc: BeneficiosService,
+    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
+    // ?publicar=1 (CTA del dashboard): abrir el formulario de una vez y limpiar
+    // el param para que refrescar/volver no lo reabra.
+    if (this.route.snapshot.queryParamMap.has('publicar')) {
+      this.mostrarFormulario = true;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { publicar: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    }
+
     this.beneficiosSvc.categorias$
       .pipe(takeUntil(this.destroy$))
       .subscribe(cats => {
@@ -136,6 +151,7 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
   private formVacio(): FormPublicarBeneficio {
     return {
       titulo: '', categoria: '', cuposIniciales: null, vigenciaHasta: '', resumen: '',
+      condiciones: '',
       documentosRequeridos: [],
     };
   }
@@ -156,7 +172,8 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
       f.categoria &&
       f.cuposIniciales && f.cuposIniciales > 0 &&
       f.vigenciaHasta &&
-      f.resumen.trim()
+      f.resumen.trim() &&
+      f.condiciones.trim()
     );
   }
 

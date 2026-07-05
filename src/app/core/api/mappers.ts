@@ -43,6 +43,14 @@ export function fechaCorta(iso?: string): string {
   return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/** El CRUD serializa TIMESTAMP NULL como el zero-time de Go ("0001-01-01…");
+ *  cualquier fecha anterior a 1970 se trata como ausente. */
+function fechaPresente(iso?: string): string | undefined {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) || d.getFullYear() < 1970 ? undefined : iso;
+}
+
 export function fechaRelativa(iso?: string): string {
   if (!iso) return '';
   const d = new Date(iso);
@@ -78,7 +86,7 @@ export function mapBeneficio(dto: BeneficioDto, categorias: CategoriaMap): Benef
     cuposIniciales: dto.cupos_total,
     cuposRestantes: dto.cupos_disponibles,
     vigenciaHasta: fechaCorta(dto.fecha_fin),
-    publicado: fechaRelativa(dto.fecha_publicacion ?? dto.fecha_creacion),
+    publicado: fechaRelativa(fechaPresente(dto.fecha_publicacion) ?? dto.fecha_creacion),
     destacado: false, // el backend aún no modela destacados
     resumen: truncar(dto.descripcion),
     empresaId: dto.empresa?.id,
