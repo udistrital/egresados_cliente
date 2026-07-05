@@ -8,7 +8,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 import { Beneficio, BeneficioDetalle, PerfilEmpresa } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
-import { CategoriaMap, mapBeneficio, mapBeneficioDetalle, mapPerfilEmpresa } from '../api/mappers';
+import { CategoriaMap, mapBeneficio, mapBeneficioDetalle, mapPerfilEmpresa, ordenarBeneficiosRecientes } from '../api/mappers';
 
 export interface DetalleBeneficio {
   beneficio?: Beneficio;
@@ -31,7 +31,7 @@ export class BeneficiosService {
   getCatalogo(): Observable<Beneficio[]> {
     return this.categorias$.pipe(
       switchMap(cats => this.api.getCatalogo().pipe(
-        map(dtos => (dtos ?? []).map(d => mapBeneficio(d, cats))),
+        map(dtos => ordenarBeneficiosRecientes(dtos ?? []).map(d => mapBeneficio(d, cats))),
       )),
     );
   }

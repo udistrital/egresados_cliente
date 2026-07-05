@@ -65,8 +65,6 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
   comentarioBorrador: Record<number, string> = {};
   guardandoComentarioId: number | null = null;
 
-  /** RN-003 — en backend viene del parámetro JUSTIFICACION_RECHAZO_MIN_CARACTERES */
-  readonly JUSTIFICACION_MIN = 20;
 
   readonly FILTROS: { value: FiltroEmpresa; label: string; icon: string }[] = [
     { value: 'todas',       label: 'Todas',        icon: 'list' },
@@ -364,11 +362,8 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
     if (!this.drawer || !this.drawerAccion) return;
     const nota = this.drawerNota.trim();
 
-    // RN-003: justificación obligatoria y con mínimo de caracteres al rechazar
-    if (this.drawerAccion === 'rechazar' && nota.length < this.JUSTIFICACION_MIN) {
-      this.drawerError = `La justificación del rechazo debe tener al menos ${this.JUSTIFICACION_MIN} caracteres (RN-003).`;
-      return;
-    }
+    // RN-003 (ajustada): la justificación del rechazo es opcional; si va vacía,
+    // el MID registra el texto institucional "rechazada sin perjuicio".
     if (this.drawerAccion === 'info' && !nota) {
       this.drawerError = 'Describe qué información necesitas del egresado.';
       return;

@@ -11,7 +11,7 @@ import {
   Beneficio, DocumentoSolicitudItem, ESTADOS, HistorialEntrada, MensajeHilo, Solicitud,
 } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
-import { mapDocumentoSolicitud, mapMensaje, mapSolicitud } from '../api/mappers';
+import { mapDocumentoSolicitud, mapMensaje, mapSolicitud, ordenarSolicitudesRecientes } from '../api/mappers';
 import { BeneficiosService } from './beneficios.service';
 import { UsuarioSesionService } from './usuario-sesion.service';
 
@@ -50,7 +50,7 @@ export class SolicitudesService {
       filter((egresadoId): egresadoId is number => egresadoId != null),
       switchMap(egresadoId => this.beneficiosSvc.categorias$.pipe(
         switchMap(cats => this.api.getSolicitudesEgresado(egresadoId).pipe(
-          map(dtos => (dtos ?? []).map(d => mapSolicitud(d, cats))),
+          map(dtos => ordenarSolicitudesRecientes(dtos ?? []).map(d => mapSolicitud(d, cats))),
         )),
       )),
       tap(solicitudes => (this.cache = solicitudes)),

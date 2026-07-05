@@ -6,6 +6,7 @@ import {
   DocumentoSolicitudItem, Solicitud, EstadoSolicitud, HistorialEntrada, MensajeHilo,
   ESTADOS,
 } from '../../shared/oati.types';
+import { CertificadoService } from '../../core/services/certificado.service';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
 import { SolicitudesService } from '../../core/services/solicitudes.service';
 import { UsuarioSesion, UsuarioSesionService } from '../../core/services/usuario-sesion.service';
@@ -69,8 +70,17 @@ export class SolicitudesComponent implements OnInit, OnDestroy {
     private autenticacion: ImplicitAutenticationService,
     private sesionSvc: UsuarioSesionService,
     private solicitudesSvc: SolicitudesService,
+    private certificadoSvc: CertificadoService,
     private route: ActivatedRoute,
   ) {}
+
+  /** Abre el certificado imprimible del beneficio otorgado (solo aprobadas). */
+  verCertificado(): void {
+    if (!this.drawer || this.drawer.estado !== 'aprobada') return;
+    if (!this.certificadoSvc.abrir(this.drawer, this.usuario)) {
+      alert('El navegador bloqueó la ventana del certificado. Permite las ventanas emergentes para este sitio.');
+    }
+  }
 
   ngOnInit(): void {
     this.radicadoPendiente = this.route.snapshot.queryParamMap.get('radicado');

@@ -36,6 +36,16 @@ export const ESTADO_TO_CODIGO: Record<EstadoSolicitud, string> = {
 /** id de parámetro → nombre de categoría; se construye con /v1/categorias-beneficio */
 export type CategoriaMap = Map<number, string>;
 
+/** Fecha de HOY en zona horaria local como "YYYY-MM-DD" (para inputs type="date").
+ *  NO usar toISOString().slice(0,10): es UTC y en Colombia (UTC-5) después de las
+ *  7 p. m. devuelve el día de mañana. */
+export function hoyLocalISO(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 export function fechaCorta(iso?: string): string {
   if (!iso) return '';
   const d = new Date(iso);
@@ -49,6 +59,29 @@ function fechaPresente(iso?: string): string | undefined {
   if (!iso) return undefined;
   const d = new Date(iso);
   return isNaN(d.getTime()) || d.getFullYear() < 1970 ? undefined : iso;
+}
+
+/** Timestamp de un ISO tolerante al zero-time de Go; 0 si ausente/no parseable. */
+function tsPresente(iso?: string): number {
+  const v = fechaPresente(iso);
+  return v ? new Date(v).getTime() : 0;
+}
+
+/** Catálogo "más recientes primero": fecha de publicación (o de creación)
+ *  descendente; empata por id descendente (autoincremental = orden de creación).
+ *  El CRUD lista ascendente por id — sin esto "recientes" mostraba los más viejos. */
+export function ordenarBeneficiosRecientes<T extends BeneficioDto>(dtos: T[]): T[] {
+  const ts = (d: T) => tsPresente(d.fecha_publicacion) || tsPresente(d.fecha_creacion);
+  return [...dtos].sort((a, b) => ts(b) - ts(a) || (b.id ?? 0) - (a.id ?? 0));
+}
+
+/** Solicitudes "más recientes primero": última actividad (fecha_modificacion,
+ *  con fallback a fecha_solicitud) descendente; empata por id descendente. */
+export function ordenarSolicitudesRecientes<
+  T extends { id?: number; fecha_solicitud?: string; fecha_modificacion?: string }
+>(dtos: T[]): T[] {
+  const ts = (d: T) => tsPresente(d.fecha_modificacion) || tsPresente(d.fecha_solicitud);
+  return [...dtos].sort((a, b) => ts(b) - ts(a) || (b.id ?? 0) - (a.id ?? 0));
 }
 
 export function fechaRelativa(iso?: string): string {

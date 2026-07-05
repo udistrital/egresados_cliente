@@ -278,6 +278,23 @@
           Revisa los mensajes abajo y responde lo antes posible.
         </div>
 
+        <!-- Certificado del beneficio otorgado (solo aprobadas) -->
+        <section *ngIf="d.estado === 'aprobada'" class="drawer__section">
+          <h3 class="drawer__section-title">Certificado</h3>
+          <div class="doc-item">
+            <div class="doc-item__info">
+              <strong>Certificado de beneficio otorgado</strong>
+              <span class="drawer__muted">Constancia con el radicado {{ d.radicado }}, lista para imprimir o guardar como PDF.</span>
+            </div>
+            <div class="doc-item__acciones">
+              <button class="btn btn--secondary" style="width:auto;padding:0 14px" type="button" (click)="verCertificado()">
+                <mat-icon style="font-size:16px;height:16px;width:16px">workspace_premium</mat-icon>
+                Ver certificado
+              </button>
+            </div>
+          </div>
+        </section>
+
         <!-- Comprobante que la empresa adjuntó al aprobar (opcional) -->
         <section *ngIf="comprobanteDrawer?.tieneComprobante" class="drawer__section">
           <h3 class="drawer__section-title">Comprobante de la empresa</h3>

@@ -158,10 +158,14 @@
                 id="pub-vigencia"
                 type="date"
                 class="field-input"
+                [min]="hoyISO"
                 [(ngModel)]="form.vigenciaHasta"
                 name="vigenciaHasta"
                 required
               />
+              <small *ngIf="vigenciaPasada" style="color:#c0392b;margin-top:4px;display:block">
+                La vigencia no puede ser anterior a hoy.
+              </small>
             </div>
 
             <!-- Resumen -->

@@ -13,7 +13,8 @@ import {
 } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
 import {
-  ESTADO_TO_CODIGO, mapBeneficioEmpresa, mapDocumentoSolicitud, mapMensaje, mapSolicitudRecibida,
+  ESTADO_TO_CODIGO, hoyLocalISO, mapBeneficioEmpresa, mapDocumentoSolicitud, mapMensaje, mapSolicitudRecibida,
+  ordenarSolicitudesRecientes,
 } from '../api/mappers';
 import { BeneficiosService } from './beneficios.service';
 import { UsuarioSesionService } from './usuario-sesion.service';
@@ -81,7 +82,7 @@ export class EmpresaService {
       distinctUntilChanged(),
       filter((empresaId): empresaId is number => empresaId != null),
       switchMap(empresaId => this.api.getBandejaEmpresa(empresaId).pipe(
-        map(dtos => (dtos ?? []).map(mapSolicitudRecibida)),
+        map(dtos => ordenarSolicitudesRecientes(dtos ?? []).map(mapSolicitudRecibida)),
       )),
     );
   }
@@ -196,7 +197,7 @@ export class EmpresaService {
       descripcion: form.resumen.trim(),
       condiciones: form.condiciones.trim(),
       categoria_beneficio_id: categoriaId,
-      fecha_inicio: new Date().toISOString().slice(0, 10),
+      fecha_inicio: hoyLocalISO(),
       fecha_fin: form.vigenciaHasta,
       cupos_total: form.cuposIniciales,
       usuario_creador_id: usuarioId ?? undefined,

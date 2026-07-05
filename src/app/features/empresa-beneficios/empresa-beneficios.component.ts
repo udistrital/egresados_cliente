@@ -13,6 +13,7 @@ import {
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
 import { BeneficiosService } from '../../core/services/beneficios.service';
 import { EmpresaService, FormPublicarBeneficio } from '../../core/services/empresa.service';
+import { hoyLocalISO } from '../../core/api/mappers';
 
 @Component({
   selector: 'app-empresa-beneficios',
@@ -39,6 +40,10 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
   categorias: { value: string; label: string }[] = [];
 
   form: FormPublicarBeneficio = this.formVacio();
+
+  /** Piso del input de vigencia: hoy (local). El picker no deja elegir antes
+   *  y formValido lo revalida por si la fecha se escribe a mano. */
+  readonly hoyISO = hoyLocalISO();
 
   /* ── Filtros / orden de la lista ─────────────────────────── */
   filtroEstado: 'todos' | 'activo' | 'agotado' | 'vencido' | 'borrador' | 'retirado' = 'todos';
@@ -171,10 +176,16 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
       f.titulo.trim() &&
       f.categoria &&
       f.cuposIniciales && f.cuposIniciales > 0 &&
-      f.vigenciaHasta &&
+      f.vigenciaHasta && !this.vigenciaPasada &&
       f.resumen.trim() &&
       f.condiciones.trim()
     );
+  }
+
+  /** true si la vigencia elegida es anterior a hoy (comparación lexicográfica,
+   *  ambos en "YYYY-MM-DD" local). */
+  get vigenciaPasada(): boolean {
+    return !!this.form.vigenciaHasta && this.form.vigenciaHasta < this.hoyISO;
   }
 
   toggleFormulario(): void {

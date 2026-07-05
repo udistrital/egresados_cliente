@@ -577,7 +577,7 @@
             {{ drawerAccion === 'aprobar'
                ? 'Nota para el egresado (opcional)'
                : drawerAccion === 'rechazar'
-               ? 'Justificación del rechazo * (mínimo ' + JUSTIFICACION_MIN + ' caracteres, RN-003)'
+               ? 'Justificación del rechazo (opcional)'
                : 'Información requerida al egresado *' }}
           </label>
           <textarea
@@ -588,7 +588,7 @@
             [placeholder]="drawerAccion === 'aprobar'
               ? 'Ej. Código de descuento enviado a tu correo institucional…'
               : drawerAccion === 'rechazar'
-              ? 'Ej. Cupos no disponibles para el programa seleccionado en este periodo…'
+              ? 'Ej. Cupos no disponibles en este periodo… Si lo dejas vacío se registrará: Solicitud rechazada sin perjuicio.'
               : 'Ej. Por favor adjunta tu certificado de grado actualizado…'"></textarea>
 
           <!-- Comprobante OPCIONAL, solo al aprobar -->
