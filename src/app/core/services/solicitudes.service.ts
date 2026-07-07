@@ -24,7 +24,7 @@ export interface ResultadoSolicitud {
 @Injectable({ providedIn: 'root' })
 export class SolicitudesService {
 
-  /** RN-010 — en backend es el parámetro LIMITE_SOLICITUDES_ACTIVAS_EGRESADO */
+  /** RN-010 — en backend es el parámetro LIMITE_SOLIC_ACTIVAS */
   readonly LIMITE_ACTIVAS = 5;
 
   /** Caché de "mis solicitudes" para las lecturas síncronas de los templates */
