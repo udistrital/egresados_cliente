@@ -29,6 +29,8 @@ export interface UsuarioSesion {
   documento: string;
   rol: string;
   esEmpresa: boolean;
+  /** NIT de la empresa (solo presente para sesiones de empresa, tras el JIT) */
+  empresaNit?: string;
   /** Perfil académico (C-2a) — presentes solo para egresados */
   codigo?: string;
   programa?: string;
@@ -102,6 +104,7 @@ export class UsuarioSesionService {
         this.patch({
           usuarioId: r.usuario_id,
           empresaId: principal.empresa_id,
+          empresaNit: principal.nit,
           // userRol de empresa no trae nombre de persona: la razón social es la
           // mejor identidad visible (antes quedaba el correo).
           ...(razonSocial ? { nombre: razonSocial, primerNombre: razonSocial } : {}),

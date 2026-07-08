@@ -62,7 +62,7 @@ export class EmpresaService {
       map(s => ({
         id: String(s.empresaId ?? ''),
         nombre: s.nombre,
-        nit: s.documento,
+        nit: s.empresaNit ?? '',
         sector: '', sitioWeb: '', email: s.email, telefono: '',
         representante: '', descripcion: '', estado: 'aprobada' as const,
         iniciales: s.iniciales,

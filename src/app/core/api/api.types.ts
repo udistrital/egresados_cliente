@@ -201,6 +201,8 @@ export interface ProvisionEgresadoDto {
 export interface EmpresaProvisionadaDto {
   empresa_id: number;
   usuario_empresa_id: number;
+  /** NIT de la empresa — solo viaja aquí (identidad propia), nunca en vistas públicas. */
+  nit: string;
   proveedor?: {
     agora_id_externo: number;
     razon_social: string;
