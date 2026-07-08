@@ -26,6 +26,8 @@ import { ImplicitAutenticationService } from './implicit-autentication.service';
 export interface EmpresaVinculada {
   empresaId: number;
   razonSocial: string;
+  /** NIT (identidad propia de la empresa autenticada — nunca de vistas públicas) */
+  nit: string;
 }
 
 export interface UsuarioSesion {
@@ -115,6 +117,7 @@ export class UsuarioSesionService {
           .map(e => ({
             empresaId: e.empresa_id,
             razonSocial: e.proveedor?.razon_social || `Empresa ${e.empresa_id}`,
+            nit: e.nit ?? '',
           }));
         if (!(r.usuario_id > 0 && empresas.length > 0)) {
           console.warn('[jit] provision de empresa devolvió datos inválidos — ids locales quedan null', r);
@@ -124,8 +127,9 @@ export class UsuarioSesionService {
         const activa = empresas.find(e => e.empresaId === recordada) ?? empresas[0];
         this.patch({
           usuarioId: r.usuario_id,
-          empresaId: principal.empresa_id,
-          empresaNit: principal.nit,
+          empresaId: activa.empresaId,
+          empresaNit: activa.nit,
+          empresas,
           // userRol de empresa no trae nombre de persona: la razón social es la
           // mejor identidad visible (antes quedaba el correo).
           nombre: activa.razonSocial,
@@ -147,6 +151,7 @@ export class UsuarioSesionService {
     localStorage.setItem(`${KEY_EMPRESA_ACTIVA}:${this.sesion.email}`, String(empresaId));
     this.patch({
       empresaId: elegida.empresaId,
+      empresaNit: elegida.nit,
       nombre: elegida.razonSocial,
       primerNombre: elegida.razonSocial,
     });
