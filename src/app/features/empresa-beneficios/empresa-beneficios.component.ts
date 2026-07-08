@@ -13,6 +13,7 @@ import {
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
 import { BeneficiosService } from '../../core/services/beneficios.service';
 import { EmpresaService, FormPublicarBeneficio } from '../../core/services/empresa.service';
+import { EmpresaVinculada } from '../../core/services/usuario-sesion.service';
 import { hoyLocalISO } from '../../core/api/mappers';
 
 @Component({
@@ -23,6 +24,8 @@ import { hoyLocalISO } from '../../core/api/mappers';
 export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 
   empresa: Empresa = EMPRESA_VACIA;
+  /** Empresas del usuario (selector multiempresa; el bloque solo aparece si hay >1) */
+  empresas: EmpresaVinculada[] = [];
   beneficios: BeneficioEmpresa[] = [];
   /** true hasta la primera lista real (JIT + fetch) */
   cargandoBeneficios = true;
@@ -98,6 +101,10 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
     this.empresaSvc.getEmpresa()
       .pipe(takeUntil(this.destroy$))
       .subscribe(empresa => (this.empresa = empresa));
+
+    this.empresaSvc.getEmpresasVinculadas()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(empresas => (this.empresas = empresas));
 
     this.empresaSvc.getBeneficiosEmpresa()
       .pipe(takeUntil(this.destroy$))
@@ -247,4 +254,17 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
   toggleMenu(): void { this.menuOpen = !this.menuOpen; }
   closeMenu(): void  { setTimeout(() => { this.menuOpen = false; }, 150); }
   logout(): void     { this.autenticacion.logout('logout-manual'); }
+
+  /** Selector multiempresa: la lista recarga sola (fachada reactiva a sesion$). */
+  esEmpresaActiva(e: EmpresaVinculada): boolean {
+    return this.empresaSvc.empresaActivaId === e.empresaId;
+  }
+  cambiarEmpresa(e: EmpresaVinculada): void {
+    this.empresaSvc.cambiarEmpresa(e.empresaId);
+    this.menuOpen = false;
+    // Estado de trabajo de la empresa anterior: no debe sobrevivir al cambio.
+    this.mostrarFormulario = false;
+    this.form = this.formVacio();
+    this.cargandoBeneficios = true;
+  }
 }

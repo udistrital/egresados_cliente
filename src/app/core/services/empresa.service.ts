@@ -13,11 +13,11 @@ import {
 } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
 import {
-  ESTADO_TO_CODIGO, hoyLocalISO, mapBeneficioEmpresa, mapDocumentoSolicitud, mapMensaje, mapSolicitudRecibida,
-  ordenarSolicitudesRecientes,
+  ESTADO_TO_CODIGO, hoyLocalISO, mapBeneficioEmpresa, mapDocumentoSolicitud, mapHistorial, mapMensaje,
+  mapSolicitudRecibida, ordenarSolicitudesRecientes,
 } from '../api/mappers';
 import { BeneficiosService } from './beneficios.service';
-import { UsuarioSesionService } from './usuario-sesion.service';
+import { EmpresaVinculada, UsuarioSesionService } from './usuario-sesion.service';
 
 export type AccionRespuesta = 'aprobar' | 'rechazar' | 'info';
 
@@ -70,6 +70,24 @@ export class EmpresaService {
     );
   }
 
+  /** Empresas del usuario (selector multiempresa, caso 1:N del JIT). */
+  getEmpresasVinculadas(): Observable<EmpresaVinculada[]> {
+    return this.sesionSvc.sesion$.pipe(
+      map(s => s.empresas),
+      distinctUntilChanged(),
+    );
+  }
+
+  /** Id de la empresa activa (para marcar la selección en el menú). */
+  get empresaActivaId(): number | null {
+    return this.sesionSvc.sesion.empresaId;
+  }
+
+  /** Cambia la empresa activa; bandeja y mis-beneficios recargan solos (sesion$). */
+  cambiarEmpresa(empresaId: number): void {
+    this.sesionSvc.seleccionarEmpresa(empresaId);
+  }
+
   /* ── Bandeja de solicitudes (RF-006) ───────────────────────── */
 
   /** Reactivo a la sesión. NO emite mientras el JIT de empresa no resuelva el
@@ -114,8 +132,13 @@ export class EmpresaService {
   /* ── Bitácora y mensajes del drawer ────────────────────────── */
 
   getHistorial(s: SolicitudRecibida): Observable<HistorialEntrada[]> {
-    // Mismo pendiente que en SolicitudesService: falta el endpoint en el MID.
-    return of([]);
+    if (s.id == null) return of([]);
+    const propio = this.sesionSvc.sesion.usuarioId;
+    return this.api.getHistorial(s.id).pipe(
+      map(dtos => (dtos ?? []).map(d =>
+        mapHistorial(d, uid => (uid != null && uid === propio ? 'empresa' : 'egresado')))),
+      catchError(() => of([] as HistorialEntrada[])),
+    );
   }
 
   getMensajes(s: SolicitudRecibida): Observable<MensajeHilo[]> {

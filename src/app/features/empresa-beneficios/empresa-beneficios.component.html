@@ -45,6 +45,21 @@
           <a class="user-menu__item" routerLink="/empresa/dashboard">
             <mat-icon>dashboard</mat-icon>Solicitudes recibidas
           </a>
+          <!-- Selector multiempresa (caso 1:N) — solo si el correo tiene varias empresas -->
+          <ng-container *ngIf="empresas.length > 1">
+            <div class="user-menu__sep"></div>
+            <div class="user-menu__group-label">Cambiar de empresa</div>
+            <button
+              *ngFor="let e of empresas"
+              class="user-menu__item"
+              type="button"
+              [disabled]="esEmpresaActiva(e)"
+              (click)="cambiarEmpresa(e)"
+            >
+              <mat-icon>{{ esEmpresaActiva(e) ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon>
+              {{ e.razonSocial }}
+            </button>
+          </ng-container>
           <div class="user-menu__sep"></div>
           <button class="user-menu__item user-menu__item--danger" type="button" (click)="logout()">
             <mat-icon>logout</mat-icon>Cerrar sesión
