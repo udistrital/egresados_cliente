@@ -47,7 +47,7 @@
             <strong>{{ usuario.nombre }}</strong>
             <span>{{ usuario.email }}</span>
             <span *ngIf="usuario.codigo" class="muted">Código: {{ usuario.codigo }}</span>
-            <span *ngIf="usuario.programa" class="muted">{{ usuario.programa }}</span>
+            <span class="muted">{{ usuario.programa || '—' }}</span>
           </div>
           <a class="user-menu__item" href="#perfil"><mat-icon>person</mat-icon>Mi perfil</a>
           <div class="user-menu__sep"></div>

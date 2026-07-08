@@ -19,7 +19,14 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
 import { PerfilApiService, TerceroDto } from '../api/perfil-api.service';
+import { programaDesdeCodigo } from '../api/programas-ud';
 import { ImplicitAutenticationService } from './implicit-autentication.service';
+
+/** Empresa a la que el usuario tiene acceso (caso 1:N del JIT de empresa) */
+export interface EmpresaVinculada {
+  empresaId: number;
+  razonSocial: string;
+}
 
 export interface UsuarioSesion {
   iniciales: string;
@@ -40,13 +47,20 @@ export interface UsuarioSesion {
   /** ids locales del módulo (JIT provisioning) — null hasta que el MID los exponga */
   usuarioId: number | null;
   egresadoId: number | null;
+  /** Empresa ACTIVA (la que operan las vistas); cambiable con seleccionarEmpresa() */
   empresaId: number | null;
+  /** Todas las empresas del usuario (selector multiempresa; [] para egresados) */
+  empresas: EmpresaVinculada[];
 }
 
 const SESION_VACIA: UsuarioSesion = {
   iniciales: '…', primerNombre: 'Cargando…', nombre: '', email: '', documento: '',
   rol: '', esEmpresa: false, usuarioId: null, egresadoId: null, empresaId: null,
+  empresas: [],
 };
+
+/** localStorage: última empresa activa por correo (sobrevive el relogin) */
+const KEY_EMPRESA_ACTIVA = 'beneficios_empresa_activa';
 
 @Injectable({ providedIn: 'root' })
 export class UsuarioSesionService {
@@ -88,29 +102,53 @@ export class UsuarioSesionService {
   /**
    * JIT provisioning de empresa: resuelve (o crea) usuario/empresa/usuario_empresa
    * locales a partir de los proveedores de Ágora asociados al correo del token.
-   * Se toma la primera empresa (es_principal); el selector multiempresa para el
-   * caso 1:N queda pendiente de UI (GET /v1/usuarios/:id/empresas ya existe).
+   * La provision trae TODAS las empresas del correo (caso 1:N): se guarda la lista
+   * completa para el selector y se activa la última usada (localStorage) o la
+   * primera (es_principal).
    */
   private provisionarEmpresa(): void {
     if (this.sesion.empresaId != null) return;
     this.midApi.provisionarEmpresa().subscribe({
       next: r => {
-        const principal = r.empresas?.[0];
-        if (!(r.usuario_id > 0 && principal && principal.empresa_id > 0)) {
+        const empresas: EmpresaVinculada[] = (r.empresas ?? [])
+          .filter(e => e.empresa_id > 0)
+          .map(e => ({
+            empresaId: e.empresa_id,
+            razonSocial: e.proveedor?.razon_social || `Empresa ${e.empresa_id}`,
+          }));
+        if (!(r.usuario_id > 0 && empresas.length > 0)) {
           console.warn('[jit] provision de empresa devolvió datos inválidos — ids locales quedan null', r);
           return;
         }
-        const razonSocial = principal.proveedor?.razon_social;
+        const recordada = Number(localStorage.getItem(`${KEY_EMPRESA_ACTIVA}:${this.sesion.email}`));
+        const activa = empresas.find(e => e.empresaId === recordada) ?? empresas[0];
         this.patch({
           usuarioId: r.usuario_id,
           empresaId: principal.empresa_id,
           empresaNit: principal.nit,
           // userRol de empresa no trae nombre de persona: la razón social es la
           // mejor identidad visible (antes quedaba el correo).
-          ...(razonSocial ? { nombre: razonSocial, primerNombre: razonSocial } : {}),
+          nombre: activa.razonSocial,
+          primerNombre: activa.razonSocial,
         });
       },
       error: err => console.warn('[jit] provision de empresa falló — ids locales quedan null', err),
+    });
+  }
+
+  /**
+   * Cambia la empresa ACTIVA (selector multiempresa). Las fachadas reactivas a
+   * sesion$ (bandeja, mis-beneficios) recargan solas al cambiar empresaId; la
+   * selección se recuerda por correo para el próximo login.
+   */
+  seleccionarEmpresa(empresaId: number): void {
+    const elegida = this.sesion.empresas.find(e => e.empresaId === empresaId);
+    if (!elegida || this.sesion.empresaId === empresaId) return;
+    localStorage.setItem(`${KEY_EMPRESA_ACTIVA}:${this.sesion.email}`, String(empresaId));
+    this.patch({
+      empresaId: elegida.empresaId,
+      nombre: elegida.razonSocial,
+      primerNombre: elegida.razonSocial,
     });
   }
 
@@ -128,7 +166,18 @@ export class UsuarioSesionService {
           console.warn('[jit] provision devolvió ids inválidos — ids locales quedan null', r);
           return;
         }
-        this.patch({ usuarioId: r.usuario_id, egresadoId: r.egresado_id });
+        const p: Partial<UsuarioSesion> = { usuarioId: r.usuario_id, egresadoId: r.egresado_id };
+        // Red de seguridad C-2a: si la cadena de perfil (terceros→consultar_persona)
+        // falló o aún no llega, el JIT también trae el código — completar código y
+        // carrera/facultad derivadas SOLO en los huecos (el perfil pisa después con
+        // el dato institucional si lo consigue).
+        if (r.codigo_institucional && !this.sesion.codigo) p.codigo = r.codigo_institucional;
+        const local = programaDesdeCodigo(r.codigo_institucional);
+        if (local) {
+          if (!this.sesion.programa) p.programa = local.programa;
+          if (!this.sesion.facultad) p.facultad = local.facultad;
+        }
+        this.patch(p);
       },
       error: err => console.warn('[jit] provision de egresado falló — ids locales quedan null', err),
     });
@@ -168,6 +217,7 @@ export class UsuarioSesionService {
       usuarioId: null,
       egresadoId: null,
       empresaId: null,
+      empresas: [],
     };
   }
 
@@ -223,8 +273,18 @@ export class UsuarioSesionService {
       }),
       // Patch de SOLO los campos del perfil: la sesión derivada de `base` trae los ids
       // locales en null y sobreescribirla completa pisaría los del JIT si llegó antes.
-    ).subscribe(({ nombre, primerNombre, iniciales, codigo, programa, facultad }) =>
-      this.patch({ nombre, primerNombre, iniciales, codigo, programa, facultad }));
+    ).subscribe(({ nombre, primerNombre, iniciales, codigo, programa, facultad }) => {
+      // Fallback local C-2a: si consultar_persona vino plano (código sin proyecto),
+      // derivar carrera/facultad de los dígitos [5:8] del código. La fuente
+      // institucional tiene prioridad; sin match, quedan vacíos (la UI pinta '—').
+      const cod = codigo ?? this.sesion.codigo;
+      const local = cod && (!programa || !facultad) ? programaDesdeCodigo(cod) : null;
+      const p: Partial<UsuarioSesion> = { nombre, primerNombre, iniciales };
+      if (cod) p.codigo = cod;
+      if (programa || local?.programa) p.programa = programa || local?.programa;
+      if (facultad || local?.facultad) p.facultad = facultad || local?.facultad;
+      this.patch(p);
+    });
   }
 }
 

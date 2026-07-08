@@ -160,9 +160,14 @@ export class BeneficiosMidService {
       `${this.base}/empresas/${empresaId}/beneficios`, body));
   }
 
-  /** PUT /v1/beneficios/:id — RF-005 editar */
+  /** PUT /v1/beneficios/:id — RF-005 editar (solo BORRADOR o PUBLICADO sin activas) */
   editarBeneficio(id: number, body: Record<string, unknown>): Observable<unknown> {
     return this.body(this.http.put<ApiResponse<unknown>>(`${this.base}/beneficios/${id}`, body));
+  }
+
+  /** PUT /v1/beneficios/:id/retirar — RF-005 retirar ("cerrar"): sale del catálogo */
+  retirarBeneficio(id: number): Observable<unknown> {
+    return this.body(this.http.put<ApiResponse<unknown>>(`${this.base}/beneficios/${id}/retirar`, {}));
   }
 
   /* ── Documentos requeridos / subidos (gestor documental, vía MID) ── */
@@ -217,12 +222,9 @@ export class BeneficiosMidService {
     return this.body(this.http.get<ApiResponse<ParametroDto[]>>(`${this.base}/sectores-economicos`));
   }
 
-  /* ── Pendiente backend ── */
-
   /**
-   * Bitácora de estados de una solicitud (RN-004). El MID aún NO expone
-   * GET /v1/solicitudes/:id/historial — agregarla cuando se retome el backend
-   * (el CRUD ya tiene GET /v1/historial_solicitud/solicitud/:id).
+   * Bitácora de estados de una solicitud (RN-004 / C-4b). El MID resuelve los
+   * códigos de estado (estado_anterior/estado_nuevo) y solo expone el id del actor.
    */
   getHistorial(solicitudId: number): Observable<HistorialDto[]> {
     return this.body(this.http.get<ApiResponse<HistorialDto[]>>(

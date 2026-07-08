@@ -13,6 +13,7 @@ import {
 } from '../../shared/oati.types';
 import { ImplicitAutenticationService } from '../../core/services/implicit-autentication.service';
 import { AccionRespuesta, EmpresaService } from '../../core/services/empresa.service';
+import { EmpresaVinculada } from '../../core/services/usuario-sesion.service';
 
 type FiltroEmpresa = 'todas' | 'pendientes' | 'en_revision' | 'aprobadas' | 'rechazadas';
 
@@ -32,6 +33,8 @@ interface RespuestaPanel {
 export class EmpresaDashboardComponent implements OnInit, OnDestroy {
 
   empresa: Empresa = EMPRESA_VACIA;
+  /** Empresas del usuario (selector multiempresa; el bloque solo aparece si hay >1) */
+  empresas: EmpresaVinculada[] = [];
   solicitudes: SolicitudRecibida[] = [];
   /** true hasta la primera bandeja real (JIT + fetch); evita mostrar "sin
    *  solicitudes" mientras el backend aún no ha respondido. */
@@ -91,6 +94,10 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
     this.empresaSvc.getEmpresa()
       .pipe(takeUntil(this.destroy$))
       .subscribe(empresa => (this.empresa = empresa));
+
+    this.empresaSvc.getEmpresasVinculadas()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(empresas => (this.empresas = empresas));
 
     this.empresaSvc.getBandeja()
       .pipe(takeUntil(this.destroy$))
@@ -410,6 +417,19 @@ export class EmpresaDashboardComponent implements OnInit, OnDestroy {
   toggleMenu(): void { this.menuOpen = !this.menuOpen; }
   closeMenu(): void  { setTimeout(() => { this.menuOpen = false; }, 150); }
   logout(): void     { this.autenticacion.logout('logout-manual'); }
+
+  /** Selector multiempresa: la bandeja recarga sola (fachada reactiva a sesion$). */
+  esEmpresaActiva(e: EmpresaVinculada): boolean {
+    return this.empresaSvc.empresaActivaId === e.empresaId;
+  }
+  cambiarEmpresa(e: EmpresaVinculada): void {
+    this.empresaSvc.cambiarEmpresa(e.empresaId);
+    this.menuOpen = false;
+    // Estado de trabajo de la empresa anterior: no debe sobrevivir al cambio.
+    this.drawer = null;
+    this.respuestaPanel = null;
+    this.cargandoBandeja = true;
+  }
 
   setFiltro(f: FiltroEmpresa): void {
     this.filtro = f;
