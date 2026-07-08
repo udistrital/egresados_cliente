@@ -33,6 +33,12 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
   menuOpen = false;
   mostrarFormulario = false;
   publicando = false;
+  /** id del beneficio en edición (null = el formulario crea uno nuevo) */
+  editandoId: number | null = null;
+  /** error del guardado (p. ej. 422 del MID: "tiene solicitudes en curso") */
+  errorGuardar: string | null = null;
+  /** id del beneficio cuyo retiro está en curso (deshabilita el botón) */
+  retirandoId: number | null = null;
 
   readonly CATEGORIA_COLORS = CATEGORIA_COLORS;
 
@@ -197,22 +203,81 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 
   toggleFormulario(): void {
     this.mostrarFormulario = !this.mostrarFormulario;
+    this.editandoId = null;
+    this.errorGuardar = null;
     if (!this.mostrarFormulario) this.form = this.formVacio();
   }
 
-  publicar(): void {
+  /** true mientras el form está en modo edición (cambia títulos y submit). */
+  get editando(): boolean {
+    return this.editandoId != null;
+  }
+
+  /** Abre el formulario precargado con el beneficio (RF-005 editar). */
+  abrirEdicion(b: BeneficioEmpresa): void {
+    this.errorGuardar = null;
+    this.empresaSvc.getFormBeneficio(Number(b.id))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: form => {
+          this.form = form;
+          this.editandoId = Number(b.id);
+          this.mostrarFormulario = true;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        error: err => (this.errorGuardar = err?.message ?? 'No se pudo cargar el beneficio'),
+      });
+  }
+
+  /** Submit del formulario: crea (publicar) o guarda (editar) según el modo. */
+  guardar(): void {
     if (!this.formValido || this.form.categoria === '' || this.publicando) return;
     this.publicando = true;
-    this.empresaSvc.publicar(this.form, this.empresa)
+    this.errorGuardar = null;
+    const operacion = this.editandoId != null
+      ? this.empresaSvc.editar(this.editandoId, this.form)
+      : this.empresaSvc.publicar(this.form, this.empresa);
+    operacion
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: beneficios => {
           this.beneficios = beneficios;
           this.form = this.formVacio();
           this.mostrarFormulario = false;
+          this.editandoId = null;
           this.publicando = false;
         },
-        error: () => { this.publicando = false; },
+        error: err => {
+          this.publicando = false;
+          this.errorGuardar = err?.message ?? 'No se pudo guardar el beneficio';
+        },
+      });
+  }
+
+  /** ¿La card muestra el botón de editar? El MID revalida la regla de todas formas. */
+  puedeEditar(b: BeneficioEmpresa): boolean {
+    return b.estadoPublicacion === 'borrador' || b.estadoPublicacion === 'activo';
+  }
+
+  /** Retirar ("cerrar") un beneficio, con confirmación. */
+  retirar(b: BeneficioEmpresa): void {
+    if (this.retirandoId != null) return;
+    const ok = window.confirm(
+      `¿Retirar "${b.titulo}"?\n\nSaldrá del catálogo y no aceptará nuevas solicitudes. ` +
+      'Las solicitudes en curso siguen en tu bandeja para responderlas.');
+    if (!ok) return;
+    this.retirandoId = Number(b.id);
+    this.empresaSvc.retirar(Number(b.id))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: beneficios => {
+          this.beneficios = beneficios;
+          this.retirandoId = null;
+        },
+        error: err => {
+          this.retirandoId = null;
+          this.errorGuardar = err?.message ?? 'No se pudo retirar el beneficio';
+        },
       });
   }
 
@@ -265,6 +330,8 @@ export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
     // Estado de trabajo de la empresa anterior: no debe sobrevivir al cambio.
     this.mostrarFormulario = false;
     this.form = this.formVacio();
+    this.editandoId = null;
+    this.errorGuardar = null;
     this.cargandoBeneficios = true;
   }
 }

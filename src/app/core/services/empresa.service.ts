@@ -231,4 +231,42 @@ export class EmpresaService {
       switchMap(() => this.getBeneficiosEmpresa().pipe(take(1))),
     );
   }
+
+  /** Carga un beneficio como formulario para editarlo (precarga del form de publicar). */
+  getFormBeneficio(beneficioId: number): Observable<FormPublicarBeneficio> {
+    return this.api.getBeneficio(beneficioId).pipe(
+      map(dto => ({
+        titulo: dto.titulo ?? '',
+        categoria: String(dto.categoria_beneficio_id ?? ''),
+        cuposIniciales: dto.cupos_total ?? null,
+        vigenciaHasta: (dto.fecha_fin ?? '').slice(0, 10),
+        resumen: dto.descripcion ?? '',
+        condiciones: dto.condiciones ?? '',
+        // Los documentos requeridos no se editan por ahora (se definen al publicar)
+        documentosRequeridos: [],
+      })),
+    );
+  }
+
+  /** RF-005: editar un beneficio. El MID valida la regla BORRADOR / PUBLICADO sin
+   *  solicitudes en curso; el estado no se cambia por aquí (ver retirar). */
+  editar(beneficioId: number, form: FormPublicarBeneficio): Observable<BeneficioEmpresa[]> {
+    const categoriaId = Number(form.categoria);
+    if (!categoriaId) return throwError(() => new Error('Selecciona la categoría del beneficio'));
+    return this.api.editarBeneficio(beneficioId, {
+      titulo: form.titulo.trim(),
+      descripcion: form.resumen.trim(),
+      condiciones: form.condiciones.trim(),
+      categoria_beneficio_id: categoriaId,
+      fecha_fin: form.vigenciaHasta,
+      cupos_total: form.cuposIniciales,
+    }).pipe(switchMap(() => this.getBeneficiosEmpresa().pipe(take(1))));
+  }
+
+  /** RF-005: retirar ("cerrar") un beneficio — pasa a RETIRADO y sale del catálogo. */
+  retirar(beneficioId: number): Observable<BeneficioEmpresa[]> {
+    return this.api.retirarBeneficio(beneficioId).pipe(
+      switchMap(() => this.getBeneficiosEmpresa().pipe(take(1))),
+    );
+  }
 }

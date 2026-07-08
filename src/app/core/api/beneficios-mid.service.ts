@@ -160,9 +160,14 @@ export class BeneficiosMidService {
       `${this.base}/empresas/${empresaId}/beneficios`, body));
   }
 
-  /** PUT /v1/beneficios/:id — RF-005 editar */
+  /** PUT /v1/beneficios/:id — RF-005 editar (solo BORRADOR o PUBLICADO sin activas) */
   editarBeneficio(id: number, body: Record<string, unknown>): Observable<unknown> {
     return this.body(this.http.put<ApiResponse<unknown>>(`${this.base}/beneficios/${id}`, body));
+  }
+
+  /** PUT /v1/beneficios/:id/retirar — RF-005 retirar ("cerrar"): sale del catálogo */
+  retirarBeneficio(id: number): Observable<unknown> {
+    return this.body(this.http.put<ApiResponse<unknown>>(`${this.base}/beneficios/${id}/retirar`, {}));
   }
 
   /* ── Documentos requeridos / subidos (gestor documental, vía MID) ── */

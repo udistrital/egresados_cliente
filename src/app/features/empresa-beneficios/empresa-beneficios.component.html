@@ -105,13 +105,15 @@
     <section *ngIf="mostrarFormulario" class="pub-form-section">
       <div class="pub-form-section__inner">
         <header class="pub-form-section__head">
-          <h2 class="pub-form-section__title">Nuevo beneficio</h2>
+          <h2 class="pub-form-section__title">{{ editando ? 'Editar beneficio' : 'Nuevo beneficio' }}</h2>
           <p class="pub-form-section__sub">
-            El beneficio quedará visible en el catálogo de egresados inmediatamente tras publicarse.
+            {{ editando
+              ? 'Los cambios se reflejan de inmediato en el catálogo de egresados.'
+              : 'El beneficio quedará visible en el catálogo de egresados inmediatamente tras publicarse.' }}
           </p>
         </header>
 
-        <form class="pub-form" (ngSubmit)="publicar()" #pf="ngForm" novalidate>
+        <form class="pub-form" (ngSubmit)="guardar()" #pf="ngForm" novalidate>
 
           <div class="pub-form__grid">
 
@@ -219,8 +221,8 @@
 
           </div><!-- /pub-form__grid -->
 
-          <!-- Documentos requeridos (opcional) -->
-          <div class="field-group pub-form__full" style="margin-top:8px">
+          <!-- Documentos requeridos (opcional; solo al publicar — no se editan aún) -->
+          <div *ngIf="!editando" class="field-group pub-form__full" style="margin-top:8px">
             <label class="field-label">
               Documentos que debe adjuntar el egresado (opcional)
             </label>
@@ -268,6 +270,10 @@
             </button>
           </div>
 
+          <p *ngIf="errorGuardar" class="pub-form__error" role="alert">
+            {{ errorGuardar }}
+          </p>
+
           <div class="pub-form__footer">
             <button type="button" class="btn btn--ghost" style="width:auto;padding:0 16px" (click)="toggleFormulario()">
               Cancelar
@@ -278,8 +284,8 @@
               style="width:auto;padding:0 20px"
               [disabled]="!formValido"
             >
-              Publicar beneficio
-              <mat-icon style="font-size:18px;height:18px;width:18px">publish</mat-icon>
+              {{ editando ? 'Guardar cambios' : 'Publicar beneficio' }}
+              <mat-icon style="font-size:18px;height:18px;width:18px">{{ editando ? 'save' : 'publish' }}</mat-icon>
             </button>
           </div>
 
@@ -428,6 +434,25 @@
               <span class="pending-dot">{{ b.solicitudesPendientes }}</span>
             </ng-container>
           </a>
+          <!-- Editar: solo BORRADOR o ACTIVO (el MID revalida la regla RN-008b) -->
+          <button *ngIf="puedeEditar(b)"
+                  type="button"
+                  class="btn btn--ghost benef-mgmt-card__accion"
+                  title="Editar beneficio"
+                  aria-label="Editar beneficio"
+                  (click)="abrirEdicion(b)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <!-- Retirar ("cerrar"): disponible mientras no esté retirado -->
+          <button *ngIf="b.estadoPublicacion !== 'retirado'"
+                  type="button"
+                  class="btn btn--ghost benef-mgmt-card__accion benef-mgmt-card__retirar"
+                  title="Retirar beneficio (sale del catálogo)"
+                  aria-label="Retirar beneficio"
+                  [disabled]="retirandoId != null"
+                  (click)="retirar(b)">
+            <mat-icon>{{ retirandoId === +b.id ? 'hourglass_top' : 'archive' }}</mat-icon>
+          </button>
           <span class="benef-mgmt-card__pub">Publicado {{ b.publicado }}</span>
         </footer>
 
