@@ -3,7 +3,7 @@
 > **Estado del documento (2026-07-08):** referencia de OTRO proyecto (SISE
 > Cliente), antes archivo `AUTH_SPEC.md`. Describe el patrón institucional del
 > que se derivó nuestra implementación; la spec vigente de NUESTRO módulo es
-> `specs/system/autenticacion/spec.md` (repo `sga_mid_beneficios_egresados`).
+> `specs/system/autenticacion/spec.md` (repo `egresados_service`).
 > La sección 13 duplica código fuente de ese repo (consérvese solo como consulta).
 
 > **Proyecto:** SISE Cliente (Frontend Angular/Ionic)

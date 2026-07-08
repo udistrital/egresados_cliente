@@ -36,7 +36,7 @@ autenticación, variables de entorno, CI/CD y no funcionales.
 3. ⛔ No usar el generador `plantilla_cliente_oas` (Hygen): generación anterior, no produce Single-SPA.
 
 ### 4. Autenticación
-1. El lineamiento original dice "la autenticación la maneja el Core, no el MF". **Realidad actual:** este MF SÍ implementa el login (necesario para operar standalone); al integrarse al shell habrá que delegar en el Core y conservar solo el consumo del token. Ver `specs/system/autenticacion/spec.md` (repo `sga_mid_beneficios_egresados`).
+1. El lineamiento original dice "la autenticación la maneja el Core, no el MF". **Realidad actual:** este MF SÍ implementa el login (necesario para operar standalone); al integrarse al shell habrá que delegar en el Core y conservar solo el consumo del token. Ver `specs/system/autenticacion/spec.md` (repo `egresados_service`).
 2. ✅ Bloque `TOKEN` en `environment.ts` (AUTORIZATION_URL, CLIENTE_ID, SCOPE, REDIRECT_URL, …). ⚠️ Valores de producción los entrega OATI (D-6) — no inventarlos.
 
 ### 5. CI/CD y calidad

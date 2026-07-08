@@ -6,9 +6,9 @@ perfiles: **egresado** (catálogo, solicitudes, perfil académico) y **empresa a
 (publicación de beneficios, bandeja de solicitudes, mensajería).
 
 Backend:
-[`sga_mid_beneficios_egresados`](https://github.com/DanielVelandia2407/sga_mid_beneficios_egresados)
+[`egresados_service`](https://github.com/udistrital/egresados_service)
 (lógica) →
-[`sga_crud_beneficios_egresados`](https://github.com/DanielVelandia2407/sga_crud_beneficios_egresados)
+[`egresados_crud`](https://github.com/udistrital/egresados_crud)
 (persistencia).
 
 ## Especificaciones técnicas
@@ -71,7 +71,7 @@ Requiere el CRUD (8080) y el MID (8081) corriendo; el login redirige a WSO2
 - `specs/lineamientos/` — restricciones institucionales OATI aplicables al front.
 - `docs/referencia-autenticacion-wso2.md` — patrón de autenticación del ecosistema SGA.
 - Las especificaciones **transversales** (visión general, autenticación, parámetros)
-  viven en `specs/system/` del repo `sga_mid_beneficios_egresados`.
+  viven en `specs/system/` del repo [`egresados_service`](https://github.com/udistrital/egresados_service).
 
 ## Contexto
 
