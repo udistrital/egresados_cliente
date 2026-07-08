@@ -217,12 +217,9 @@ export class BeneficiosMidService {
     return this.body(this.http.get<ApiResponse<ParametroDto[]>>(`${this.base}/sectores-economicos`));
   }
 
-  /* ── Pendiente backend ── */
-
   /**
-   * Bitácora de estados de una solicitud (RN-004). El MID aún NO expone
-   * GET /v1/solicitudes/:id/historial — agregarla cuando se retome el backend
-   * (el CRUD ya tiene GET /v1/historial_solicitud/solicitud/:id).
+   * Bitácora de estados de una solicitud (RN-004 / C-4b). El MID resuelve los
+   * códigos de estado (estado_anterior/estado_nuevo) y solo expone el id del actor.
    */
   getHistorial(solicitudId: number): Observable<HistorialDto[]> {
     return this.body(this.http.get<ApiResponse<HistorialDto[]>>(

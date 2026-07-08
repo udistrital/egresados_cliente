@@ -11,7 +11,7 @@ import {
   Beneficio, DocumentoSolicitudItem, ESTADOS, HistorialEntrada, MensajeHilo, Solicitud,
 } from '../../shared/oati.types';
 import { BeneficiosMidService } from '../api/beneficios-mid.service';
-import { mapDocumentoSolicitud, mapMensaje, mapSolicitud, ordenarSolicitudesRecientes } from '../api/mappers';
+import { mapDocumentoSolicitud, mapHistorial, mapMensaje, mapSolicitud, ordenarSolicitudesRecientes } from '../api/mappers';
 import { BeneficiosService } from './beneficios.service';
 import { UsuarioSesionService } from './usuario-sesion.service';
 
@@ -118,10 +118,10 @@ export class SolicitudesService {
 
   getHistorial(s: Solicitud): Observable<HistorialEntrada[]> {
     if (s.id == null) return of([]);
-    // El MID aún no expone /solicitudes/:id/historial (ver BeneficiosMidService):
-    // degradar a vacío hasta que se agregue al retomar el backend.
+    const propio = this.sesionSvc.sesion.usuarioId;
     return this.api.getHistorial(s.id).pipe(
-      map(() => [] as HistorialEntrada[]),
+      map(dtos => (dtos ?? []).map(d =>
+        mapHistorial(d, uid => (uid != null && uid === propio ? 'egresado' : 'empresa')))),
       catchError(() => of([] as HistorialEntrada[])),
     );
   }

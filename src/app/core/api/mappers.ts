@@ -222,17 +222,17 @@ export function mapSolicitudRecibida(dto: BandejaItemDto): SolicitudRecibida {
 }
 
 /**
- * Mapea la bitácora. El actor se infiere comparando el usuario del registro
- * con el usuario en sesión (mientras el CRUD no exponga el tipo resuelto).
+ * Mapea la bitácora. Los estados llegan como codigo_abreviacion ya resueltos por el
+ * MID (estado_anterior/estado_nuevo); el actor se infiere comparando el usuario del
+ * registro con el usuario en sesión (mientras el CRUD no exponga el tipo resuelto).
  */
 export function mapHistorial(
   dto: HistorialDto,
-  estados: Map<number, EstadoSolicitud>,
   actorDe: (usuarioId?: number) => 'egresado' | 'empresa',
 ): HistorialEntrada {
   return {
-    estadoAnterior: dto.estado_anterior_id != null ? estados.get(dto.estado_anterior_id) : undefined,
-    estadoNuevo: estados.get(dto.estado_nuevo_id) ?? 'pendiente',
+    estadoAnterior: dto.estado_anterior ? CODIGO_TO_ESTADO[dto.estado_anterior] : undefined,
+    estadoNuevo: (dto.estado_nuevo && CODIGO_TO_ESTADO[dto.estado_nuevo]) || 'pendiente',
     actor: actorDe(dto.usuario?.id),
     justificacion: dto.justificacion,
     fecha: fechaRelativa(dto.fecha_cambio),

@@ -170,6 +170,9 @@ export interface HistorialDto {
   id: number;
   estado_anterior_id?: number;
   estado_nuevo_id: number;
+  /** codigo_abreviacion del parámetro ESTADO_SOLICITUD, resuelto por el MID (C-1) */
+  estado_anterior?: string;
+  estado_nuevo?: string;
   usuario?: UsuarioDto;
   justificacion?: string;
   fecha_cambio: string;
