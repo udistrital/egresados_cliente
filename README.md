@@ -24,8 +24,9 @@ Backend:
 ```
 core/
   services/    fachadas BeneficiosService / SolicitudesService / EmpresaService
-               → eligen demo ↔ HTTP según environment.DEMO_MODE; los componentes
-                 solo dependen de ellas (Observables)
+               → reactivas a la sesión (recargan solas al resolver el JIT o
+                 cambiar de empresa activa); los componentes solo dependen
+                 de ellas (Observables)
   api/         beneficios-mid.service (espejo 1:1 de las rutas del MID),
                api.types.ts (DTOs), mappers.ts (DTO → modelos de UI),
                perfil-api.service (cadena C-2a: userRol → terceros_crud →
@@ -37,18 +38,16 @@ features/      catalogo · beneficio-detalle · solicitudes · dashboard ·
 shared/        solicitud-modal · tipos OATI
 ```
 
-- **`DEMO_MODE`** (en `src/environments/environment.ts`): `true` usa datos demo en
-  memoria; `false` consume el MID real. Los componentes no cambian.
 - **`UsuarioSesionService`** centraliza el usuario del token y el perfil enriquecido
-  (nombre, correo, código, programa, foto con fallback a iniciales). Los ids locales
-  (`usuarioId`/`egresadoId`/`empresaId`) serán reales cuando el MID implemente JIT
-  provisioning.
+  (nombre, correo, código, programa, foto con fallback a iniciales). Tras el login
+  dispara el JIT provisioning del perfil correspondiente (egresado o empresa) contra
+  el MID y guarda los ids locales; para empresa mantiene la lista completa de
+  empresas vinculadas (selector multiempresa, caso 1:N).
 
 ## Configuración (`src/environments/`)
 
 | Campo | Descripción |
 |---|---|
-| `DEMO_MODE` / `DEMO_ROL` | demo ↔ backend real; rol simulado en demo (`egresado`/`empresa`) |
 | `BENEFICIOS_MID` | URL del MID (`http://localhost:8081/v1` en local) |
 | `TOKEN.*` (`AUTORIZATION_URL`, `CLIENTE_ID`, `REDIRECT_URL`, `AUTENTICACION_MID`, ...) | OAuth2/OIDC WSO2 — el `CLIENTE_ID` propio del módulo está pendiente de la OAS (no reutilizar el del SGA) |
 | `ROLES_EGRESADO` / `ROLES_EMPRESA` | nombres de rol WSO2 — pendientes de definición con OATI; mientras tanto los guards solo exigen sesión autenticada |
@@ -63,8 +62,16 @@ npm install
 npm start          # http://localhost:4200
 ```
 
-Para probar contra el backend real: levantar CRUD (8080) y MID (8081), poner
-`DEMO_MODE: false` y usar credenciales institucionales (el login redirige a WSO2).
+Requiere el CRUD (8080) y el MID (8081) corriendo; el login redirige a WSO2
+(credenciales institucionales).
+
+## Documentación (SDD)
+
+- `specs/cliente-ui/` — spec y tareas del micro-frontend (arquitectura, vistas, sesión).
+- `specs/lineamientos/` — restricciones institucionales OATI aplicables al front.
+- `docs/referencia-autenticacion-wso2.md` — patrón de autenticación del ecosistema SGA.
+- Las especificaciones **transversales** (visión general, autenticación, parámetros)
+  viven en `specs/system/` del repo `sga_mid_beneficios_egresados`.
 
 ## Contexto
 
