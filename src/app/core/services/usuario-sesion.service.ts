@@ -177,9 +177,13 @@ export class UsuarioSesionService {
         // carrera/facultad derivadas SOLO en los huecos (el perfil pisa después con
         // el dato institucional si lo consigue).
         if (r.codigo_institucional && !this.sesion.codigo) p.codigo = r.codigo_institucional;
+        // academica_jbpm (institucional) tiene prioridad sobre el fallback local
+        // por dígitos del código; ambos solo llenan el hueco si el perfil
+        // (enriquecerPerfilEgresado, sga_mid) aún no trajo programa.
+        if (r.carrera && !this.sesion.programa) p.programa = r.carrera;
         const local = programaDesdeCodigo(r.codigo_institucional);
         if (local) {
-          if (!this.sesion.programa) p.programa = local.programa;
+          if (!p.programa && !this.sesion.programa) p.programa = local.programa;
           if (!this.sesion.facultad) p.facultad = local.facultad;
         }
         this.patch(p);

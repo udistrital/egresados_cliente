@@ -234,7 +234,7 @@
               <span class="categoria">{{ s.beneficio }}</span>
             </div>
 
-            <span class="emp-sol__programa">{{ s.programa }}</span>
+            <span class="emp-sol__programa" [title]="s.programa">{{ s.programa }}</span>
 
             <span [class]="badgeCls(s.estado)">
               <mat-icon style="font-size:12px;height:12px;width:12px">{{ badgeIcon(s.estado) }}</mat-icon>
