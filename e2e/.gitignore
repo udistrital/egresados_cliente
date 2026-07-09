@@ -1,0 +1,9 @@
+# Credenciales reales de las cuentas de prueba — nunca versionar
+.env
+
+# Sesiones guardadas por los proyectos "setup" (contienen tokens reales)
+playwright/.auth/
+
+# Salidas de Playwright
+report/
+test-results/

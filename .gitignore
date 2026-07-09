@@ -40,3 +40,8 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment (contiene credenciales reales para el suite e2e)
+.env
+.env.*
+!.env.example
