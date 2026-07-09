@@ -198,6 +198,8 @@ export interface ProvisionEgresadoDto {
   egresado_id: number;
   codigo_institucional: string;
   nombre?: string;
+  /** Carrera del egresado (academica_jbpm), on-demand — ausente si el SGA no la resolvió. */
+  carrera?: string;
 }
 
 /** Cada empresa vinculada en el JIT de empresa (proveedor en forma pública) */
