@@ -121,8 +121,19 @@ export class CertificadoService {
     cursor: pointer;
   }
   @media print {
+    /* El diseño de pantalla usa min-height/paddings/márgenes generosos para verse
+       bien como página suelta; sumados llegan casi justo a los 297mm de un A4 (sin
+       margen de seguridad), así que cualquier redondeo del motor de impresión hace
+       que el pie de página se corra solo a una segunda hoja. Se recortan aquí (solo
+       para impresión) sin tocar la vista en pantalla. */
     body { background: #fff; padding: 0; }
-    .hoja { border: 0; width: auto; min-height: auto; }
+    .hoja { border: 0; width: auto; min-height: auto; padding: 8mm 16mm; page-break-inside: avoid; }
+    .marco { height: auto; min-height: auto; padding: 8mm 14mm; }
+    .cuerpo { margin-top: 14px; line-height: 1.6; }
+    .detalle { margin-top: 16px; }
+    .detalle td { padding: 5px 12px; }
+    .firmas { margin-top: 0; padding-top: 20px; }
+    footer { margin-top: 14px; padding-top: 8px; }
     .acciones { display: none; }
     @page { size: A4 portrait; margin: 0; }
   }
