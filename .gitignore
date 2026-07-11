@@ -41,6 +41,10 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Playwright (e2e) — outputDir por defecto en la raíz del proyecto; el
+# report/test-results propios de e2e/ ya los cubre e2e/.gitignore
+/test-results
+
 # Environment (contiene credenciales reales para el suite e2e)
 .env
 .env.*
