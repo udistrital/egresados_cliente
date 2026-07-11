@@ -2,9 +2,10 @@ import { Component } from '@angular/core';
 import { ImplicitAutenticationService } from './core/services/implicit-autentication.service';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss'],
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss'],
+    standalone: false
 })
 export class AppComponent {
   // CRÍTICO: inyectar el servicio de autenticación AQUÍ, aunque no se use.

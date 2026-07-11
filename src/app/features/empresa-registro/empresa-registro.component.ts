@@ -20,9 +20,10 @@ interface FormRegistro {
 type Pantalla = 'form' | 'enviado';
 
 @Component({
-  selector: 'app-empresa-registro',
-  templateUrl: './empresa-registro.component.html',
-  styleUrls: ['./empresa-registro.component.scss'],
+    selector: 'app-empresa-registro',
+    templateUrl: './empresa-registro.component.html',
+    styleUrls: ['./empresa-registro.component.scss'],
+    standalone: false
 })
 export class EmpresaRegistroComponent {
 
