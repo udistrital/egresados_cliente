@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormsModule } from '@angular/forms';
-import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 /* Core */
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
@@ -31,32 +31,26 @@ import { EmpresaRegistroComponent } from './features/empresa-registro/empresa-re
 import { EmpresaDashboardComponent } from './features/empresa-dashboard/empresa-dashboard.component';
 import { EmpresaBeneficiosComponent } from './features/empresa-beneficios/empresa-beneficios.component';
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    LoginComponent,
-    DashboardComponent,
-    CatalogoComponent,
-    BeneficioDetalleComponent,
-    SolicitudesComponent,
-    SolicitudModalComponent,
-    EmpresaRegistroComponent,
-    EmpresaDashboardComponent,
-    EmpresaBeneficiosComponent,
-  ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    FormsModule,
-    HttpClientModule,
-    MatIconModule,
-    MatButtonModule,
-    AppRoutingModule,
-  ],
-  providers: [
-    { provide: LocationStrategy, useClass: HashLocationStrategy },
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
-  ],
-  bootstrap: [AppComponent],
-})
+@NgModule({ declarations: [
+        AppComponent,
+        LoginComponent,
+        DashboardComponent,
+        CatalogoComponent,
+        BeneficioDetalleComponent,
+        SolicitudesComponent,
+        SolicitudModalComponent,
+        EmpresaRegistroComponent,
+        EmpresaDashboardComponent,
+        EmpresaBeneficiosComponent,
+    ],
+    bootstrap: [AppComponent], imports: [BrowserModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        MatIconModule,
+        MatButtonModule,
+        AppRoutingModule], providers: [
+        { provide: LocationStrategy, useClass: HashLocationStrategy },
+        { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+        provideHttpClient(withInterceptorsFromDi()),
+    ] })
 export class AppModule {}

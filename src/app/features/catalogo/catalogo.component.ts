@@ -15,9 +15,10 @@ interface Filtros {
 }
 
 @Component({
-  selector: 'app-catalogo',
-  templateUrl: './catalogo.component.html',
-  styleUrls: ['./catalogo.component.scss'],
+    selector: 'app-catalogo',
+    templateUrl: './catalogo.component.html',
+    styleUrls: ['./catalogo.component.scss'],
+    standalone: false
 })
 export class CatalogoComponent implements OnInit, OnDestroy {
   readonly PER_PAGE = 6;

@@ -17,9 +17,10 @@ import { EmpresaVinculada } from '../../core/services/usuario-sesion.service';
 import { hoyLocalISO } from '../../core/api/mappers';
 
 @Component({
-  selector: 'app-empresa-beneficios',
-  templateUrl: './empresa-beneficios.component.html',
-  styleUrls: ['./empresa-beneficios.component.scss'],
+    selector: 'app-empresa-beneficios',
+    templateUrl: './empresa-beneficios.component.html',
+    styleUrls: ['./empresa-beneficios.component.scss'],
+    standalone: false
 })
 export class EmpresaBeneficiosComponent implements OnInit, OnDestroy {
 

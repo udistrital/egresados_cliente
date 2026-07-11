@@ -17,9 +17,10 @@ interface Banner {
 }
 
 @Component({
-  selector: 'app-dashboard',
-  templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss'],
+    selector: 'app-dashboard',
+    templateUrl: './dashboard.component.html',
+    styleUrls: ['./dashboard.component.scss'],
+    standalone: false
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   readonly LIMITE_ACTIVAS = this.solicitudesSvc.LIMITE_ACTIVAS;

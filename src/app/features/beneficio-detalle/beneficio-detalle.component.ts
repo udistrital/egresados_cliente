@@ -12,9 +12,10 @@ import { UsuarioSesion, UsuarioSesionService } from '../../core/services/usuario
  * Detalle de un beneficio · RF-003 (GET mid /v1/beneficios/:id vía fachada).
  */
 @Component({
-  selector: 'app-beneficio-detalle',
-  templateUrl: './beneficio-detalle.component.html',
-  styleUrls: ['./beneficio-detalle.component.scss'],
+    selector: 'app-beneficio-detalle',
+    templateUrl: './beneficio-detalle.component.html',
+    styleUrls: ['./beneficio-detalle.component.scss'],
+    standalone: false
 })
 export class BeneficioDetalleComponent implements OnInit, OnDestroy {
 
