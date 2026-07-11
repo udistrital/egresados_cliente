@@ -15,17 +15,20 @@ Backend:
 
 ### Tecnologías Implementadas y Versiones
 
-- [Angular](https://angular.io/docs) 16.2.0
+- [Angular](https://angular.io/docs) 20.3.26
   - Incluye Animations, CDK, Common, Compiler, Core, Forms, Material,
     Platform-Browser, Platform-Browser-Dynamic, Router
-- [Angular Material](https://material.angular.io/) 16.2.14
-- [Angular CDK](https://material.angular.io/cdk/categories) 16.2.14
+  - Arquitectura NgModule (no standalone); builder clásico `browser` (webpack),
+    no el nuevo `application` (esbuild/vite) — ver nota de Single-SPA abajo
+- [Angular Material](https://material.angular.io/) 20.2.14
+- [Angular CDK](https://material.angular.io/cdk/categories) 20.2.14
 - [Bootstrap](https://getbootstrap.com/) 5.3.2
 - [RxJS](https://rxjs.dev/guide/overview) ~7.8.0
 - [SweetAlert2](https://sweetalert2.github.io/) 11.26.x
 - [ts-md5](https://github.com/cotag/ts-md5) 2.0.1
 - [tslib](https://github.com/Microsoft/tslib) 2.3.0
-- [Zone.js](https://github.com/angular/angular/tree/master/packages/zone.js) ~0.13.0
+- [Zone.js](https://github.com/angular/angular/tree/master/packages/zone.js) ~0.15.1
+- [TypeScript](https://www.typescriptlang.org/) ~5.8.3
 - Autenticación **OAuth2 Implicit Flow + OIDC sobre WSO2** (mismo esquema del
   `sga_cliente` institucional)
 - Pruebas unitarias: Karma + Jasmine (scaffold estándar de Angular CLI)
@@ -33,6 +36,12 @@ Backend:
 > Pendiente: integración single-spa con el shell del SGA (`sga_cliente_root` +
 > `core_mf_cliente`) — hoy arranca como app Angular normal (`ng serve`), a
 > diferencia de otros micro-frontends institucionales que ya corren bajo Single-SPA.
+> **Importante:** `single-spa-angular` exige el builder clásico `browser`
+> (necesita salida SystemJS, que el builder `application`/esbuild no soporta) —
+> no migrar al builder nuevo antes de esa integración. Además, a la fecha
+> `single-spa-angular@9.x` solo soporta Angular hasta la 18 en estable (19 solo
+> en beta, 20 sin release aún) — confirmar con OATI el orden de estas dos
+> migraciones antes de avanzar con Single-SPA.
 
 ## Arquitectura interna
 
