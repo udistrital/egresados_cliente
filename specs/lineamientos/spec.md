@@ -1,6 +1,6 @@
 # Spec — Lineamientos OATI para el frontend
 
-> **Última actualización:** 2026-07-08 · Deriva de `LINEAMIENTOS_OATI.md`
+> **Última actualización:** 2026-07-10 · Deriva de `LINEAMIENTOS_OATI.md`
 > (mayo 2026), actualizado al estado real del repo. Marca: ✅ confirmado ·
 > ⚠️ por confirmar con OATI.
 
@@ -24,9 +24,10 @@ autenticación, variables de entorno, CI/CD y no funcionales.
 ### 1. Arquitectura
 1. ✅ El SGA usa **microfrontends Single-SPA**; cada módulo es un repo `sga_cliente_<modulo>_mf`. En producción conviven Root (orquestador) + Core (layout y auth del shell) + este MF.
 2. ⚠️ **Estado actual del repo:** bootstrap Angular normal con login OIDC propio — funciona standalone para desarrollo y demo. El empaque single-spa-angular y la convivencia con el Core (quién parsea el callback OAuth) es el trabajo de integración pendiente.
+3. ⚠️ **Compatibilidad de versión con `single-spa-angular`:** el repo está en Angular 20.3 (actualizado 2026-07-10). A esa fecha, `single-spa-angular@9.x` soporta oficialmente Angular hasta la 18; Angular 19 solo tiene un beta sin publicar en estable y Angular 20 no tiene release (issue abierto en su repo). Confirmar con OATI el orden de estas dos migraciones antes de empacar como Single-SPA.
 
 ### 2. Stack
-1. ✅ **Angular 16.2** + Angular Material 16 + Bootstrap 5 (alineado con el MF de referencia `sga_cliente_notas_mf`).
+1. ✅ **Angular 20.3** + Angular Material 20 + Bootstrap 5 (alineado con el MF de referencia `sga_cliente_notas_mf`). Builder clásico `browser` (webpack) mantenido a propósito — `single-spa-angular` requiere salida SystemJS, que el builder `application`/esbuild no soporta (ver sección 1 y README).
 2. ✅ RxJS 7, SweetAlert2 (heredado del servicio de auth); ngx-translate ⚠️ (no aplicado aún).
 3. ⚠️ Pruebas unitarias con Jest y hooks husky (lineamiento; hoy no hay tests).
 

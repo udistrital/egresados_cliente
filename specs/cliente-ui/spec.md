@@ -1,12 +1,12 @@
 # Spec — Micro-frontend (`sga_cliente_beneficios_egresados_mf`)
 
-> **Última actualización:** 2026-07-08 · **Estado:** integrado end-to-end con el
+> **Última actualización:** 2026-07-10 · **Estado:** integrado end-to-end con el
 > MID real (modo demo eliminado el 2026-07-02). Deriva de `CONTEXTO_PROYECTO.md`
 > y `LINEAMIENTOS_OATI.md`, actualizado a la arquitectura real.
 
 ## Objetivo
 
-UI del módulo para los dos perfiles (egresado y empresa) en Angular 16.2,
+UI del módulo para los dos perfiles (egresado y empresa) en Angular 20.3,
 consumiendo exclusivamente el MID. Validación de feedback inmediato en cliente;
 la validación autoritativa es del backend.
 
@@ -20,7 +20,7 @@ pantallas de administrador (espera D-8), redención RF-009.
 
 ## Repos involucrados
 
-- `sga_cliente_beneficios_egresados_mf` (este) — Angular 16.2 + Angular Material; empaque Single-SPA pendiente (hoy bootstrap Angular normal).
+- `sga_cliente_beneficios_egresados_mf` (este) — Angular 20.3 + Angular Material; empaque Single-SPA pendiente (hoy bootstrap Angular normal, builder clásico `browser` por compatibilidad con `single-spa-angular`, ver README).
 - Consume: `sga_mid_beneficios_egresados` (única API) + WSO2 (login).
 
 ## Arquitectura por capas
