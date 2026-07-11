@@ -17,9 +17,10 @@ function base64ToBlob(base64: string, tipo = 'application/pdf'): Blob {
  * El confirmar dispara POST mid /v1/solicitudes a través de la fachada.
  */
 @Component({
-  selector: 'app-solicitud-modal',
-  templateUrl: './solicitud-modal.component.html',
-  styleUrls: ['./solicitud-modal.component.scss'],
+    selector: 'app-solicitud-modal',
+    templateUrl: './solicitud-modal.component.html',
+    styleUrls: ['./solicitud-modal.component.scss'],
+    standalone: false
 })
 export class SolicitudModalComponent implements OnInit {
   @Input({ required: true }) beneficio!: Beneficio;

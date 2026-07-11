@@ -21,9 +21,10 @@ function base64ToBlob(base64: string, tipo = 'application/pdf'): Blob {
 }
 
 @Component({
-  selector: 'app-solicitudes',
-  templateUrl: './solicitudes.component.html',
-  styleUrls: ['./solicitudes.component.scss'],
+    selector: 'app-solicitudes',
+    templateUrl: './solicitudes.component.html',
+    styleUrls: ['./solicitudes.component.scss'],
+    standalone: false
 })
 export class SolicitudesComponent implements OnInit, OnDestroy {
 

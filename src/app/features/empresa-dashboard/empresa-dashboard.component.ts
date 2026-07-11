@@ -26,9 +26,10 @@ interface RespuestaPanel {
 }
 
 @Component({
-  selector: 'app-empresa-dashboard',
-  templateUrl: './empresa-dashboard.component.html',
-  styleUrls: ['./empresa-dashboard.component.scss'],
+    selector: 'app-empresa-dashboard',
+    templateUrl: './empresa-dashboard.component.html',
+    styleUrls: ['./empresa-dashboard.component.scss'],
+    standalone: false
 })
 export class EmpresaDashboardComponent implements OnInit, OnDestroy {
 
