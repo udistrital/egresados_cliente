@@ -22,14 +22,6 @@
         <span class="org">Portal de Egresados · OATI</span>
       </div>
     </div>
-    <div class="header__period">
-      Periodo activo: <strong>2026-1</strong>
-    </div>
-    <div class="header__actions">
-      <a class="icon-btn" href="#soporte" aria-label="Soporte y ayuda">
-        <mat-icon>help_outline</mat-icon>
-      </a>
-    </div>
   </header>
 
   <!-- ── Grilla principal ───────────────────────────────────── -->
@@ -89,11 +81,6 @@
 
         <!-- Autenticación via WSO2 -->
         <div class="wso2-auth">
-          <p class="wso2-auth__info">
-            La autenticación se gestiona de forma segura a través del servidor institucional de la Universidad Distrital (WSO2).
-            Al continuar serás redirigido para ingresar tus credenciales.
-          </p>
-
           <button
             class="btn btn--primary btn--wso2"
             type="button"
@@ -107,11 +94,6 @@
             </ng-container>
             <span *ngIf="loading">Redirigiendo a WSO2…</span>
           </button>
-
-          <p class="wso2-auth__note">
-            <mat-icon style="font-size:14px;height:14px;width:14px;vertical-align:middle">lock</mat-icon>
-            Tus credenciales son manejadas exclusivamente por la Universidad Distrital. Este portal no las almacena.
-          </p>
         </div><!-- /wso2-auth -->
 
         <!-- Bloque de registro (único: mismo auto-registro institucional para ambos) -->
@@ -134,13 +116,6 @@
     <div class="footer__copy">
       © 2026 <strong>Universidad Distrital Francisco José de Caldas</strong> · Oficina Asesora de Tecnologías e Información (OATI)
     </div>
-    <nav class="footer__links">
-      <a href="#soporte">Soporte</a>
-      <a href="#estado">Estado del servicio</a>
-      <a href="#terminos">Términos</a>
-      <a href="https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" target="_blank" rel="noopener noreferrer">Tratamiento de datos · Ley 1581/2012</a>
-      <a href="https://sgral.udistrital.edu.co/xdata/csu/acu_2024-004.pdf" target="_blank" rel="noopener noreferrer">Acuerdo 004 de 2024 CSU</a>
-    </nav>
   </footer>
 
 </div><!-- /app -->

@@ -52,23 +52,6 @@
   }
 }
 
-.header__period {
-  display: none;
-  font-size: 12px;
-  color: var(--fg-3);
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  strong { color: var(--fg-1); font-weight: var(--weight-medium); }
-
-  @media (min-width: 720px) { display: block; }
-}
-
-.header__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
 /* ─── Main grid ──────────────────────────────────────────── */
 .main {
   flex: 1;
@@ -446,33 +429,12 @@
   gap: var(--space-4);
 }
 
-.wso2-auth__info {
-  font-size: 13.5px;
-  color: var(--fg-2);
-  line-height: 1.55;
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
-
 .btn--wso2 {
   width: 100%;
   justify-content: center;
   gap: var(--space-2);
   height: 48px;
   font-size: 15px;
-}
-
-.wso2-auth__note {
-  font-size: 11.5px;
-  color: var(--fg-3);
-  margin: 0;
-  text-align: center;
-  line-height: 1.4;
-
-  mat-icon { margin-right: 4px; }
 }
 
 /* ─── Splash de redirección (sesión vigente) ─────────────── */
