@@ -44,19 +44,21 @@ export class LoginComponent implements OnInit {
      empresas entran por el MISMO flujo WSO2; la rama se decide DESPUÉS del login
      según el Estado que devuelve userRol. Por eso no hay selector de rol. */
   readonly cfg: LoginConfig = {
-    eyebrow: 'Portal de beneficios · 2026-1',
+    eyebrow: 'Portal de beneficios',
     displayPre: 'Aprovecha tu ',
     displayEm: 'vínculo de por vida',
     displayPost: ' con la UD.',
     lede: 'Egresados: explora el catálogo de beneficios y solicítalos en línea. Empresas aliadas: publica beneficios y gestiona solicitudes en tu bandeja. Todo desde un único portal, con tu cuenta institucional.',
+    /* Proposiciones de valor sin cifras: los conteos reales viven detrás del
+       JWT del MID y no hay endpoint público; nunca mostrar números inventados. */
     stats: [
-      { num: '247',   label: 'Beneficios activos en catálogo' },
-      { num: '47',    label: 'Empresas aliadas activas en el portal' },
-      { num: '1 850', label: 'Solicitudes radicadas en 2026' },
+      { num: '100%', label: 'Trámite en línea, de la solicitud a la respuesta' },
+      { num: '24/7', label: 'Catálogo de beneficios siempre disponible' },
+      { num: 'UD',   label: 'Empresas aliadas verificadas por la Universidad' },
     ],
     cardEyebrow: 'Acceso al portal',
     cardTitle: 'Iniciar sesión',
-    cardSubtitle: 'Ingresa con tu cuenta institucional de la Universidad Distrital. El portal identifica automáticamente si eres egresado o empresa aliada.',
+    cardSubtitle: 'Inicia sesión con tu cuenta de egresado o de empresa aliada para acceder al módulo de beneficios: ofertas, descuentos y convenios exclusivos para la comunidad UD.',
     // Registro ÚNICO: egresados y empresas se auto-registran en la misma página
     // institucional (WSO2 self-signup, confirmado OATI). La URL definitiva del
     // registro institucional está pendiente de OATI; mientras tanto es placeholder.
