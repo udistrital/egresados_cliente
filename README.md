@@ -84,9 +84,9 @@ export const environment = {
     CLIENTE_ID: '',           // ← lo entrega OATI (D-6); NO reutilizar el del SGA en prod
     RESPONSE_TYPE: 'id_token token',
     SCOPE: 'openid email role documento',
-    REDIRECT_URL: 'http://localhost:4200/',  // debe coincidir con lo registrado en WSO2
+    REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co/',  // debe coincidir con lo registrado en WSO2
     SIGN_OUT_URL: 'https://autenticacion.portaloas.udistrital.edu.co/oidc/logout',
-    SIGN_OUT_REDIRECT_URL: 'http://localhost:4200/',
+    SIGN_OUT_REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co/',
     SIGN_OUT_APPEND_TOKEN: 'true',
     AUTENTICACION_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/autenticacion_mid/v1/token/userRol',
   },
