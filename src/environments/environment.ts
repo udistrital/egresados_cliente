@@ -28,9 +28,11 @@ export const environment = {
   PROYECTO_ACADEMICO_SERVICE: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/proyecto_academico_crud/v1',
 
   // MID de Beneficios Egresados. En local (ng serve contra el MID en :8081) reemplazar
-  // por 'http://localhost:8081/v1'; URL de despliegue (ambiente de pruebas) confirmada
-  // por OATI. Sin slash final: el service arma las rutas como `${base}/beneficios`, etc.
-  BENEFICIOS_MID: 'https://pruebasapi2.intranetoas.udistrital.edu.co/egresados_mid/v1',
+  // por 'http://localhost:8081/v1'. En despliegue va por el mismo gateway de
+  // "autenticación única" que el resto de servicios institucionales de este archivo
+  // (TERCEROS_SERVICE, SGA_MID, PROYECTO_ACADEMICO_SERVICE) — NO por intranetoas
+  // directo: ese host es de red interna, inalcanzable desde el navegador del cliente.
+  BENEFICIOS_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/egresados_mid/v1',
 
   // Roles de WSO2 que habilitan cada vista.
   // ← Confirmar con OATI los nombres reales de los roles (D-5/D-7) y ampliar aquí.

@@ -99,8 +99,9 @@ export const environment = {
   SGA_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/sga_mid/v1',
   PROYECTO_ACADEMICO_SERVICE: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/proyecto_academico_crud/v1',
 
-  // MID de Beneficios Egresados: :8081 en local; en despliegue (pruebas) confirmado por OATI
-  BENEFICIOS_MID: 'https://pruebasapi2.intranetoas.udistrital.edu.co/egresados_mid/v1',
+  // MID de Beneficios Egresados: :8081 en local; en despliegue va por el gateway de
+  // autenticación única, igual que TERCEROS_SERVICE/SGA_MID (no por intranet directo)
+  BENEFICIOS_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/egresados_mid/v1',
 
   // Roles de WSO2 que habilitan cada vista (pendientes de confirmar con OATI, D-5/D-7)
   ROLES_EGRESADO: ['egresado', 'EGRESADO'],
@@ -110,7 +111,7 @@ export const environment = {
 
 | Campo | Descripción |
 |---|---|
-| `BENEFICIOS_MID` | URL del MID (`http://localhost:8081/v1` en local; `https://pruebasapi2.intranetoas.udistrital.edu.co/egresados_mid/v1` en el ambiente de pruebas, confirmado por OATI — la URL de producción real aún no se ha entregado) |
+| `BENEFICIOS_MID` | URL del MID (`http://localhost:8081/v1` en local; `https://autenticacion.portaloas.udistrital.edu.co/apioas/egresados_mid/v1` en despliegue — gateway de autenticación única, no el host de intranet) |
 | `TOKEN.*` (`AUTORIZATION_URL`, `CLIENTE_ID`, `REDIRECT_URL`, `AUTENTICACION_MID`, ...) | OAuth2/OIDC WSO2 — `CLIENTE_ID` propio del módulo entregado por OATI (D-6) |
 | `ROLES_EGRESADO` / `ROLES_EMPRESA` | nombres de rol WSO2 — pendientes de definición con OATI; mientras tanto los guards solo exigen sesión autenticada |
 | `TERCEROS_SERVICE`, `SGA_MID`, `PROYECTO_ACADEMICO_SERVICE` | servicios institucionales usados por el perfil del egresado (C-2a) |
