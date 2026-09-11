@@ -12,9 +12,9 @@ export const environment = {
     CLIENTE_ID: 'BEar4wMvpm_IBLa6vfPi8NnX4zYa',
     RESPONSE_TYPE: 'id_token token',
     SCOPE: 'openid email role documento',
-    REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co/', // ← debe coincidir exactamente con lo registrado en WSO2
+    REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co', // ← debe coincidir exactamente con lo registrado en WSO2
     SIGN_OUT_URL: 'https://autenticacion.portaloas.udistrital.edu.co/oidc/logout',
-    SIGN_OUT_REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co/',
+    SIGN_OUT_REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co',
     SIGN_OUT_APPEND_TOKEN: 'true',
     AUTENTICACION_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/autenticacion_mid/v1/token/userRol',
   },
