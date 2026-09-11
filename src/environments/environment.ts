@@ -8,9 +8,8 @@ export const environment = {
 
   TOKEN: {
     AUTORIZATION_URL: 'https://autenticacion.portaloas.udistrital.edu.co/oauth2/authorize',
-    // ← Reemplazar con el Client ID que entregue OATI para este proyecto.
-    //   Para desarrollo local temporal se puede usar el del SGA (mismo redirect_uri localhost:4200):
-    CLIENTE_ID: 'e36v1MPQk2jbz9KM4SmKhk8Cyw0a',
+    // Client ID propio del modulo, entregado por OATI (D-6).
+    CLIENTE_ID: 'BEar4wMvpm_IBLa6vfPi8NnX4zYa',
     RESPONSE_TYPE: 'id_token token',
     SCOPE: 'openid email role documento',
     REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co/', // ← debe coincidir exactamente con lo registrado en WSO2
@@ -28,9 +27,10 @@ export const environment = {
   SGA_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/sga_mid/v1',
   PROYECTO_ACADEMICO_SERVICE: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/proyecto_academico_crud/v1',
 
-  // MID de Beneficios Egresados. En local corre en :8081 (conf/app.conf del MID);
-  // en despliegue OATI lo expone tras el gateway /apioas/ (ver environment.prod.ts).
-  BENEFICIOS_MID: 'http://localhost:8081/v1',
+  // MID de Beneficios Egresados. En local (ng serve contra el MID en :8081) reemplazar
+  // por 'http://localhost:8081/v1'; en despliegue OATI lo expone tras el gateway /apioas/
+  // con este nombre de servicio (confirmado por OATI, no "beneficios_egresados_mid").
+  BENEFICIOS_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/egresados_mid/v1',
 
   // Roles de WSO2 que habilitan cada vista.
   // ← Confirmar con OATI los nombres reales de los roles (D-5/D-7) y ampliar aquí.

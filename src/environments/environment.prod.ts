@@ -26,8 +26,8 @@ export const environment = {
   SGA_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/sga_mid/v1',
   PROYECTO_ACADEMICO_SERVICE: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/proyecto_academico_crud/v1',
 
-  // ← Ruta del MID en el gateway (la asigna OATI al desplegar, patrón /apioas/<servicio>/v1)
-  BENEFICIOS_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/beneficios_egresados_mid/v1',
+  // Ruta del MID en el gateway (confirmada por OATI, no "beneficios_egresados_mid")
+  BENEFICIOS_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/egresados_mid/v1',
 
   ROLES_EGRESADO: ['egresado', 'EGRESADO'],
   ROLES_EMPRESA: ['empresa', 'EMPRESA'],

@@ -81,7 +81,7 @@ export const environment = {
 
   TOKEN: {
     AUTORIZATION_URL: 'https://autenticacion.portaloas.udistrital.edu.co/oauth2/authorize',
-    CLIENTE_ID: '',           // ← lo entrega OATI (D-6); NO reutilizar el del SGA en prod
+    CLIENTE_ID: 'BEar4wMvpm_IBLa6vfPi8NnX4zYa', // ← propio del módulo, entregado por OATI (D-6)
     RESPONSE_TYPE: 'id_token token',
     SCOPE: 'openid email role documento',
     REDIRECT_URL: 'https://pruebasegresados.portaloas.udistrital.edu.co/',  // debe coincidir con lo registrado en WSO2
@@ -99,8 +99,9 @@ export const environment = {
   SGA_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/sga_mid/v1',
   PROYECTO_ACADEMICO_SERVICE: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/proyecto_academico_crud/v1',
 
-  // MID de Beneficios Egresados: :8081 en local, tras el gateway /apioas/ en despliegue
-  BENEFICIOS_MID: 'http://localhost:8081/v1',
+  // MID de Beneficios Egresados: :8081 en local; tras el gateway /apioas/ en despliegue
+  // (nombre de servicio confirmado por OATI: egresados_mid)
+  BENEFICIOS_MID: 'https://autenticacion.portaloas.udistrital.edu.co/apioas/egresados_mid/v1',
 
   // Roles de WSO2 que habilitan cada vista (pendientes de confirmar con OATI, D-5/D-7)
   ROLES_EGRESADO: ['egresado', 'EGRESADO'],
@@ -110,8 +111,8 @@ export const environment = {
 
 | Campo | Descripción |
 |---|---|
-| `BENEFICIOS_MID` | URL del MID (`http://localhost:8081/v1` en local) |
-| `TOKEN.*` (`AUTORIZATION_URL`, `CLIENTE_ID`, `REDIRECT_URL`, `AUTENTICACION_MID`, ...) | OAuth2/OIDC WSO2 — el `CLIENTE_ID` propio del módulo está pendiente de la OAS (no reutilizar el del SGA en prod) |
+| `BENEFICIOS_MID` | URL del MID (`http://localhost:8081/v1` en local; `.../apioas/egresados_mid/v1` en despliegue, confirmado por OATI) |
+| `TOKEN.*` (`AUTORIZATION_URL`, `CLIENTE_ID`, `REDIRECT_URL`, `AUTENTICACION_MID`, ...) | OAuth2/OIDC WSO2 — `CLIENTE_ID` propio del módulo entregado por OATI (D-6) |
 | `ROLES_EGRESADO` / `ROLES_EMPRESA` | nombres de rol WSO2 — pendientes de definición con OATI; mientras tanto los guards solo exigen sesión autenticada |
 | `TERCEROS_SERVICE`, `SGA_MID`, `PROYECTO_ACADEMICO_SERVICE` | servicios institucionales usados por el perfil del egresado (C-2a) |
 
