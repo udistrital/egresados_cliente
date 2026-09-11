@@ -352,11 +352,6 @@ a:hover { color: var(--link-hover); }
   gap: var(--space-3);
 
   .footer__copy { color: var(--fg-3); strong { color: var(--fg-2); font-weight: var(--weight-medium); } }
-  .footer__links {
-    display: flex; gap: var(--space-5); flex-wrap: wrap;
-    a { color: var(--fg-2); text-decoration: none; font-weight: var(--weight-medium); transition: color 0.15s ease; }
-    a:hover { color: var(--primary-500); }
-  }
 }
 
 /* ─── Estado badges ──────────────────────────────────────── */
